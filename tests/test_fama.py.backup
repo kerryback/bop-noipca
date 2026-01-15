@@ -1,0 +1,567 @@
+"""
+Test Fama-French and Fama-MacBeth Factor Computation
+
+USAGE:
+------
+Run this test from the tests/ directory:
+    cd tests
+    python test_fama.py <model>
+
+where <model> is one of: bgn, kp14, gs21
+
+Directory structure (relative to tests/):
+    ./original_code/        - Original Fama code to compare against
+    ../run_fama.py          - Current Fama factor computation
+    ../config.py            - Configuration (N, T, burnin values)
+
+PURPOSE:
+--------
+This test verifies that the refactored Fama-French and Fama-MacBeth factor
+computation produces numerically identical results to the original code
+when given the same panel data.
+
+WORKFLOW COMPARISON:
+-------------------
+
+ORIGINAL CODE (tests/original_code/):
+  Implementation: Import directly and call functions in-process
+
+  1. Import fama_functions.py (original Fama factor computation module)
+     - Imports: parameters.py (model parameters)
+     - Uses sklearn Ridge regression
+
+  2. Functions:
+     - fama_french(data, chars, mve): Compute FF portfolios (2x3 sorts)
+       Returns: weights array (N, K+1) with factor weights + market
+
+     - fama_macbeth(data, chars, mve, stdz_fm): Compute FM factors
+       Returns: weights array (N, K+1) with factor loadings
+
+     - factors(func, panel, ...): Wrapper that applies func to each month
+       Returns: DataFrame of factor returns (months x factors)
+
+  3. Execution:
+     - Import fama_functions module
+     - Call fama_french() and fama_macbeth() with panel data
+     - Returns factor DataFrames directly
+
+CURRENT CODE (utils_factors/):
+  Implementation: Run via command line subprocess (../run_fama.py)
+
+  1. Import fama_functions.py (refactored version)
+     - Imports: config.py (centralized configuration)
+     - Imports: ridge_utils.py (optimized ridge regression)
+     - Imports: factor_utils.py (standardization utilities)
+
+  2. Same function signatures as original code
+     - Identical implementation with performance optimizations
+     - Vectorized operations where possible
+     - Cleaner, more readable code
+
+  3. Execution:
+     - Run run_fama.py via subprocess: python run_fama.py bgn_0
+     - Script reads panel from pickle file (bgn_0_panel.pkl)
+     - Computes FF and FM factors using fama_functions
+     - Saves factors to pickle file: bgn_0_fama.pkl
+     - Test reads pickle file to get results
+
+TEST CONFIGURATION:
+------------------
+From config.py:
+  - N = 50 firms
+  - T = 400 time periods
+  - BGN_BURNIN/KP14_BURNIN/GS21_BURNIN = 300 months
+  - TEST_SEED = 12345 (set in test script)
+
+EXPECTED RESULTS:
+----------------
+All factor calculations should be numerically identical:
+  1. ff_returns (Fama-French): DataFrame, rtol=1e-14, atol=1e-15
+  2. fm_returns (Fama-MacBeth): DataFrame, rtol=1e-14, atol=1e-15
+
+TEST PROCEDURE:
+--------------
+1. Generate panel with current code via generate_panel.py subprocess
+2. Read panel pickle file
+3. Compute Fama factors with original code using panel data
+4. Compute Fama factors with current code via run_fama.py subprocess
+5. Read fama pickle file from current code
+6. Compare original vs current factor returns
+7. Delete all pickle files (cleanup)
+
+USAGE:
+------
+python test_fama.py <model>
+
+where <model> is one of: bgn, kp14, gs21
+
+Examples:
+    python test_fama.py bgn
+    python test_fama.py kp14
+    python test_fama.py gs21
+"""
+
+import sys
+import numpy as np
+import pandas as pd
+import pickle
+import subprocess
+import random
+from pathlib import Path
+
+# Add paths (run from tests/ directory)
+# ../  - for current code (config.py, generate_panel.py, etc.)
+# ./test_utils/  - for test utilities (comparison.py)
+# ./original_code/  - for original code to compare against
+sys.path.insert(0, str(Path(__file__).parent.parent))  # ../
+sys.path.insert(0, str(Path(__file__).parent / 'test_utils'))  # ./test_utils/
+sys.path.insert(0, str(Path(__file__).parent / 'original_code'))  # ./original_code/
+
+from comparison import assert_close
+from config import N, T
+
+# Test configuration
+TEST_SEED = 12345
+EXPECTED_N = 50
+EXPECTED_T = 400
+
+
+def check_config_values():
+    """Check if N and T match expected test values."""
+    if N != EXPECTED_N or T != EXPECTED_T:
+        print("\n" + "!" * 70)
+        print("WARNING: Configuration mismatch detected!")
+        print("!" * 70)
+        print(f"Expected: N={EXPECTED_N}, T={EXPECTED_T}")
+        print(f"Current:  N={N}, T={T}")
+        print("\nTests are designed for N=50 and T=400.")
+        print("Running with different values may cause tests to fail or produce")
+        print("unexpected results.")
+        print()
+
+        response = input("Do you want to continue anyway? (y/n): ").strip().lower()
+        if response != 'y':
+            print("\nTest aborted by user.")
+            return False
+        print()
+    return True
+
+
+def prepare_panel_for_fama(panel, chars):
+    """Prepare panel data for Fama factor computation."""
+    # Set multi-index
+    panel = panel.set_index(['month', 'firmid'])
+
+    # Get valid data range
+    start = panel.index.get_level_values('month').min()
+    end = panel.index.get_level_values('month').max()
+
+    return panel, start, end
+
+
+def compute_fama_with_original(panel, chars, start, end, n_jobs=1):
+    """Compute Fama factors using original code."""
+    import fama_functions as fama_old
+
+    print("Computing Fama factors with original code...")
+
+    # Compute Fama-French factors
+    ff_returns_old = fama_old.factors(
+        fama_old.fama_french,
+        panel,
+        n_jobs=n_jobs,
+        start=start,
+        end=end,
+        chars=chars
+    )
+
+    # Compute Fama-MacBeth factors
+    # Note: Original code doesn't support stdz_fm parameter
+    fm_returns_old = fama_old.factors(
+        fama_old.fama_macbeth,
+        panel,
+        n_jobs=n_jobs,
+        start=start,
+        end=end,
+        chars=chars
+    )
+
+    print(f"  Original FF returns: {ff_returns_old.shape}")
+    print(f"  Original FM returns: {fm_returns_old.shape}")
+
+    return ff_returns_old, fm_returns_old
+
+
+def test_fama_factors(model):
+    """Test Fama factor computation for a given model."""
+    # Get burnin for this model
+    from config import BGN_BURNIN, KP14_BURNIN, GS21_BURNIN
+    burnin_map = {'bgn': BGN_BURNIN, 'kp14': KP14_BURNIN, 'gs21': GS21_BURNIN}
+    burnin = burnin_map[model]
+
+    print("=" * 70)
+    print(f"Fama-French & Fama-MacBeth Factor Test: {model.upper()}")
+    print("=" * 70)
+    print(f"N={N}, T={T}, Burnin={burnin}, Seed={TEST_SEED}\n")
+
+    # Test panel identifier
+    TEST_PANEL_ID = 0
+    panel_id = f"{model}_{TEST_PANEL_ID}"
+
+    # Get model configuration
+    if model == 'bgn':
+        chars = ['size', 'bm', 'agr', 'roe', 'mom']
+    elif model == 'kp14':
+        chars = ['size', 'bm', 'agr', 'roe', 'mom']
+    elif model == 'gs21':
+        chars = ['size', 'bm', 'agr', 'roe', 'mom']
+    else:
+        raise ValueError(f"Unknown model: {model}")
+
+    # Step 1: Generate panel with current code via command line
+    print("[1/5] Generating panel with current code via generate_panel.py...")
+    test_dir = Path(__file__).parent
+    cmd = [sys.executable, str(test_dir / 'test_utils' / 'run_generate_panel.py'), model, str(TEST_PANEL_ID)]
+    result = subprocess.run(cmd, capture_output=True, text=True)
+
+    if result.returncode != 0:
+        print(f"[ERROR] generate_panel.py failed:")
+        print(result.stdout)
+        print(result.stderr)
+        return False
+
+    print(f"      Panel generated successfully")
+
+    # Step 2: Read panel pickle file
+    from config import DATA_DIR
+    panel_file = Path(DATA_DIR) / f'{panel_id}_panel.pkl'
+
+    print(f"\n[2/7] Reading panel from {panel_file}...")
+    with open(panel_file, 'rb') as f:
+        panel_data = pickle.load(f)
+    panel = panel_data['panel']
+    print(f"      Panel shape: {panel.shape}")
+
+    # Get parent directory for running scripts
+    parent_dir = Path(__file__).parent.parent
+
+    # Step 3: Generate moments file (required for portfolio statistics)
+    print(f"\n[3/7] Generating moments file via calculate_moments.py...")
+    cmd = [sys.executable, str(parent_dir / 'calculate_moments.py'), panel_id]
+    result = subprocess.run(cmd, cwd=str(parent_dir), capture_output=True, text=True)
+
+    if result.returncode != 0:
+        print(f"[ERROR] calculate_moments.py failed:")
+        print(result.stdout)
+        print(result.stderr)
+        return False
+
+    print(f"      Moments file generated successfully")
+    moments_file = Path(DATA_DIR) / f'{panel_id}_moments.pkl'
+
+    # Step 4: Compute Fama factors with original code
+    print(f"\n[4/7] Computing Fama factors with original code...")
+    panel_prepared, start, end = prepare_panel_for_fama(panel.copy(), chars)
+    ff_returns_old, fm_returns_old = compute_fama_with_original(
+        panel_prepared, chars, start, end
+    )
+
+    # Step 5: Compute Fama factors with current code via run_fama.py
+    print(f"\n[5/7] Computing Fama factors with current code via run_fama.py...")
+    parent_dir = Path(__file__).parent.parent
+    cmd = [sys.executable, str(parent_dir / 'run_fama.py'), panel_id]
+    result = subprocess.run(cmd, cwd=str(parent_dir), capture_output=True, text=True)
+
+    if result.returncode != 0:
+        print(f"[ERROR] run_fama.py failed:")
+        print(result.stdout)
+        print(result.stderr)
+        return False
+
+    print(f"      Fama factors computed successfully")
+
+    # Read fama pickle file
+    fama_file = Path(DATA_DIR) / f'{panel_id}_fama.pkl'
+    print(f"\n[6/7] Reading Fama factors from {fama_file}...")
+    with open(fama_file, 'rb') as f:
+        fama_data = pickle.load(f)
+    ff_returns_new = fama_data['ff_returns']
+    fm_returns_new = fama_data['fm_returns']
+    print(f"      FF returns shape: {ff_returns_new.shape}")
+    print(f"      FM returns shape: {fm_returns_new.shape}")
+
+    # Step 7: Verify portfolio statistics against manual computation
+    print(f"\n[7/7] Verifying portfolio statistics using original formulas...")
+    stats_passed = True
+
+    if 'fama_stats' not in fama_data:
+        print(f"      [FAIL] 'fama_stats' not found in pickle file")
+        stats_passed = False
+    elif 'model_stats' not in fama_data:
+        print(f"      [FAIL] 'model_stats' not found in pickle file")
+        stats_passed = False
+    else:
+        fama_stats = fama_data['fama_stats']
+        model_stats = fama_data['model_stats']
+
+        print(f"      Fama stats shape: {fama_stats.shape}")
+        if model_stats is not None:
+            print(f"      Model stats shape: {model_stats.shape}")
+        else:
+            print(f"      Model stats: None (no model factors available)")
+
+        # Load SDF moments to manually compute stats
+        moments_file = Path(DATA_DIR) / f'{panel_id}_moments.pkl'
+        if not moments_file.exists():
+            print(f"      [FAIL] Moments file not found: {moments_file}")
+            stats_passed = False
+        else:
+            with open(moments_file, 'rb') as f:
+                moments_data = pickle.load(f)
+
+            # Test three months: first, last, and random middle
+            min_month = fama_stats['month'].min()
+            max_month = fama_stats['month'].max()
+            random_month = random.randint(min_month + 1, max_month - 1)
+            test_months = [min_month, random_month, max_month]
+            test_alpha = 0  # No shrinkage
+
+            print(f"      Testing 3 months: {min_month} (first), {random_month} (random), {max_month} (last)")
+            print(f"      Alpha={test_alpha}")
+
+            # Loop through all three test months
+            for test_month in test_months:
+                print(f"\n      Month {test_month}:")
+
+                # Get stats from pickle
+                fama_row = fama_stats[(fama_stats['month'] == test_month) &
+                                      (fama_stats['alpha'] == test_alpha) &
+                                      (fama_stats['method'] == 'ff')].iloc[0]
+
+                # Get moments for this month (moments_data has nested structure)
+                moments = moments_data['moments']
+                month_moments = moments[test_month]
+                cond_var = month_moments['cond_var']
+                rp = month_moments['rp']
+                second_moment = month_moments['second_moment']
+                second_moment_inv = month_moments['second_moment_inv']
+
+                # Get panel data for this month
+                panel_data = panel.set_index(['month', 'firmid'])
+                data_month = panel_data.loc[test_month]
+
+                # Compute factor weights (same as original: fama.fama_french)
+                import fama_functions as fama_old
+                factor_weights = fama_old.fama_french(data_month[chars], chars=chars, mve=data_month['mve'])
+
+                # Get portfolio of factors (MV-efficient portfolio with alpha=0)
+                ff_returns = fama_data['ff_returns']
+                # Use past 360 months ending at test_month-1
+                hist_start = max(start, test_month - 360)
+                hist_returns = ff_returns.loc[hist_start:test_month-1]
+
+                # Ridge regression with alpha=0 (no shrinkage)
+                # Target is ones vector for mean-variance optimization
+                from sklearn.linear_model import Ridge
+                X = hist_returns.values
+                y = np.ones(len(X))  # Correct target for MV optimization
+                port_of_factors = Ridge(alpha=360*0, fit_intercept=False).fit(X, y).coef_
+
+                # Compute weights on stocks
+                weights_on_stocks = factor_weights @ port_of_factors
+
+                # Manually compute stats using original formulas
+                keep_this_month = data_month.index.to_numpy()
+                stock_cov = cond_var[keep_this_month, :][:, keep_this_month]
+                rp_month = rp[keep_this_month]
+                second_moment_month = second_moment[keep_this_month, :][:, keep_this_month]
+                second_moment_inv_month = second_moment_inv[keep_this_month, :][:, keep_this_month]
+
+                manual_stdev = np.sqrt(weights_on_stocks @ stock_cov @ weights_on_stocks)
+                manual_mean = weights_on_stocks @ rp_month
+                manual_xret = weights_on_stocks @ data_month['xret'].values
+                errs = rp_month - second_moment_month @ weights_on_stocks
+                manual_hjd = np.sqrt(errs @ second_moment_inv_month @ errs)
+
+                # Compare with pickle values
+                print(f"        Comparing computed vs. pickle values:")
+                try:
+                    assert_close(manual_stdev, fama_row['stdev'], rtol=1e-10, atol=1e-12, name="stdev")
+                    print(f"          [PASS] stdev matches")
+                except AssertionError as e:
+                    print(f"          [FAIL] stdev: {e}")
+                    stats_passed = False
+
+                try:
+                    assert_close(manual_mean, fama_row['mean'], rtol=1e-10, atol=1e-12, name="mean")
+                    print(f"          [PASS] mean matches")
+                except AssertionError as e:
+                    print(f"          [FAIL] mean: {e}")
+                    stats_passed = False
+
+                try:
+                    assert_close(manual_xret, fama_row['xret'], rtol=1e-10, atol=1e-12, name="xret")
+                    print(f"          [PASS] xret matches")
+                except AssertionError as e:
+                    print(f"          [FAIL] xret: {e}")
+                    stats_passed = False
+
+                try:
+                    assert_close(manual_hjd, fama_row['hjd'], rtol=1e-10, atol=1e-12, name="hjd")
+                    print(f"          [PASS] hjd matches")
+                except AssertionError as e:
+                    print(f"          [FAIL] hjd: {e}")
+                    stats_passed = False
+
+    # Print stats verification summary
+    if stats_passed:
+        print(f"\n      [ALL PASS] Portfolio statistics verification passed")
+    else:
+        print(f"\n      [FAIL] Portfolio statistics verification failed")
+
+    # Step 6: Compare original vs current factor returns
+    print(f"\n[COMPARE] Comparing original vs current factor returns...")
+    all_passed = True
+
+    # Compare Fama-French returns
+    print(f"\n  Fama-French returns:")
+    print(f"    Original columns: {list(ff_returns_old.columns)}")
+    print(f"    Current columns: {list(ff_returns_new.columns)}")
+
+    try:
+        # Only compare overlapping columns
+        common_cols = [col for col in ff_returns_old.columns if col in ff_returns_new.columns]
+        print(f"    Comparing {len(common_cols)} common columns: {common_cols}")
+
+        # Compare values
+        assert_close(
+            ff_returns_new[common_cols].values,
+            ff_returns_old[common_cols].values,
+            rtol=1e-14,
+            atol=1e-15,
+            name="ff_returns"
+        )
+        print(f"    [PASS] Values are identical")
+
+        # Check index match
+        assert ff_returns_new.index.equals(ff_returns_old.index), \
+            "FF returns index mismatch"
+        print(f"    [PASS] Index matches")
+
+        # Note differences in columns
+        extra_cols = [col for col in ff_returns_new.columns if col not in ff_returns_old.columns]
+        if extra_cols:
+            print(f"    [NOTE] Current code has {len(extra_cols)} extra columns: {extra_cols}")
+
+    except AssertionError as e:
+        print(f"    [FAIL] ff_returns: {e}")
+        all_passed = False
+
+    # Compare Fama-MacBeth returns
+    print(f"\n  Fama-MacBeth returns:")
+    print(f"    Original columns: {list(fm_returns_old.columns)}")
+    print(f"    Current columns: {list(fm_returns_new.columns)}")
+
+    try:
+        # Only compare overlapping columns
+        common_cols = [col for col in fm_returns_old.columns if col in fm_returns_new.columns]
+        print(f"    Comparing {len(common_cols)} common columns: {common_cols}")
+
+        # Compare values
+        assert_close(
+            fm_returns_new[common_cols].values,
+            fm_returns_old[common_cols].values,
+            rtol=1e-14,
+            atol=1e-15,
+            name="fm_returns"
+        )
+        print(f"    [PASS] Values are identical")
+
+        # Check index match
+        assert fm_returns_new.index.equals(fm_returns_old.index), \
+            "FM returns index mismatch"
+        print(f"    [PASS] Index matches")
+
+        # Note differences in columns
+        extra_cols = [col for col in fm_returns_new.columns if col not in fm_returns_old.columns]
+        if extra_cols:
+            print(f"    [NOTE] Current code has {len(extra_cols)} extra columns: {extra_cols}")
+
+    except AssertionError as e:
+        print(f"    [FAIL] fm_returns: {e}")
+        all_passed = False
+
+    if all_passed:
+        print("\n  [ALL PASS] All factor comparisons passed")
+    else:
+        print("\n  [FAIL] Factors are NOT identical")
+
+    # Combine results
+    overall_passed = all_passed and stats_passed
+
+    # Save outputs to tests/outputs directory
+    print(f"\n[SAVE] Saving Fama results to tests/outputs...")
+    import shutil
+    outputs_dir = Path(__file__).parent / 'outputs'
+    outputs_dir.mkdir(exist_ok=True)
+
+    files_to_save = [
+        (panel_file, f'{panel_id}_panel.pkl'),
+        (moments_file, f'{panel_id}_moments.pkl'),
+        (fama_file, f'{panel_id}_fama.pkl')
+    ]
+
+    for src_file, dst_name in files_to_save:
+        if src_file.exists():
+            dst_file = outputs_dir / dst_name
+            shutil.copy2(src_file, dst_file)
+            print(f"      Saved {dst_name}")
+
+    # Cleanup - delete all pickle files from DATA_DIR
+    print(f"\n[CLEANUP] Deleting pickle files from DATA_DIR...")
+
+    files_to_delete = [panel_file, moments_file, fama_file]
+    for file_path in files_to_delete:
+        if file_path.exists():
+            file_path.unlink()
+            print(f"      Deleted {file_path.name}")
+        else:
+            print(f"      {file_path.name} not found (already deleted)")
+
+    print("\n" + "=" * 70)
+    print(f"[DONE] Fama factor test complete for {model.upper()}")
+    if overall_passed:
+        print("[RESULT] ALL TESTS PASSED")
+    else:
+        print("[RESULT] SOME TESTS FAILED")
+    print("=" * 70)
+
+    return overall_passed
+
+
+def main():
+    """Main execution function."""
+    # Check configuration values first
+    if not check_config_values():
+        sys.exit(1)
+
+    if len(sys.argv) < 2:
+        print("Usage: python test_fama.py <model>")
+        print("where <model> is one of: bgn, kp14, gs21")
+        sys.exit(1)
+
+    model = sys.argv[1].lower()
+
+    if model not in ['bgn', 'kp14', 'gs21']:
+        print(f"Error: Unknown model '{model}'")
+        print("Valid models: bgn, kp14, gs21")
+        sys.exit(1)
+
+    success = test_fama_factors(model)
+
+    if not success:
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

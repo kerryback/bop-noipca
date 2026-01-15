@@ -1,0 +1,27 @@
+\begin{table}[h]
+\centering
+\begin{tabular}{llrr}
+\toprule
+Model & Method & Sharpe Ratio & HJ Distance \\
+\midrule
+BGN & FMR & 0.1425 & 0.3078 \\
+BGN & FFC & 0.1423 & 0.3327 \\
+BGN & FMR - FFC & 0.0002 & -0.0249 \\
+\midrule
+KP14 & FMR & 0.1404 & 0.1954 \\
+KP14 & FFC & 0.1277 & 0.2233 \\
+KP14 & FMR - FFC & 0.0127 & -0.0280 \\
+\midrule
+GS21 & FMR & 0.0360 & 0.7283 \\
+GS21 & FFC & 0.0382 & 0.7459 \\
+GS21 & FMR - FFC & -0.0022 & -0.0177 \\
+\midrule
+\bottomrule
+\end{tabular}
+
+\caption{
+    \textbf{Performance of FMR and FFC Models.}
+    The conditional Sharpe ratio and Hansen-Jagannathan distance
+    are calculated for each out-of-sample month and averaged across panels.
+    \label{tab:fama}}
+\end{table}

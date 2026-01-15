@@ -1,0 +1,740 @@
+Started at Sun 28 Dec 2025, 10:21AM
+
+Configuration:
+  Model: bgn
+  Index range: 0 to 0 (inclusive)
+  Total runs: 1
+  DKKM features: [6, 36, 360]
+  IPCA K values: [1, 2, 3]
+  Log file: C:\Users\kerry\repos\CodeNew\NoIPCA\logs\bgn_0_1.log
+
+
+======================================================================
+RUNNING WORKFLOW FOR BGN_0
+======================================================================
+
+======================================================================
+STEP 1: Generating BGN panel data (index=0)
+======================================================================
+
+======================================================================
+PANEL GENERATION
+======================================================================
+Model: BGN
+Identifier: 0
+Started at Sun 28 Dec 2025, 10:21AM
+======================================================================
+started import of vasicek at Sun 28 Dec 2025, 10:21AM
+finished import of vasicek at Sun 28 Dec 2025, 10:21AM
+
+Parameters:
+  N (firms): 50
+  T (periods): 400
+  Burnin: 300
+  Characteristics: ['size', 'bm', 'agr', 'roe', 'mom']
+
+----------------------------------------------------------------------
+Generating panel for BGN model...
+----------------------------------------------------------------------
+Creating arrays...
+Creating panel...
+
+Firm-months with bm=0 (after burnin): 7
+
+----------------------------------------------------------------------
+Saving panel and arrays to C:\Users\kerry\repos\CodeNew\NoIPCA\outputs\bgn_0_panel.pkl...
+----------------------------------------------------------------------
+[OK] Saved successfully
+
+----------------------------------------------------------------------
+PANEL SUMMARY
+----------------------------------------------------------------------
+Model: BGN (identifier=0)
+  Shape: (20000, 14)
+  Columns: ['month', 'firmid', 'mve', 'xret', 'A_1_taylor', 'A_2_taylor', 'A_1_proj', 'A_2_proj', 'roe', 'bm', 'mom', 'agr', 'rf_stand', 'size']
+  Months: 300 to 699
+  Unique months: 400
+  Firms: 50
+  Characteristics: ['size', 'bm', 'agr', 'roe', 'mom']
+  Mean excess return: 0.0133
+  Std excess return: 0.0691
+
+======================================================================
+GENERATION COMPLETE
+======================================================================
+Finished at Sun 28 Dec 2025, 10:21AM
+Total runtime: 3.7s (0.1 minutes)
+
+Output file: C:\Users\kerry\repos\CodeNew\NoIPCA\outputs\bgn_0_panel.pkl
+
+To compute SDF moments:
+  python calculate_moments.py bgn_0
+
+To extract factors:
+  python run_fama.py bgn_0
+  python run_dkkm.py bgn_0 1000
+======================================================================
+
+======================================================================
+STEP 2: Calculating SDF conditional moments (rp, cond_var, etc.)
+======================================================================
+
+[Parallel(n_jobs=10)]: Using backend LokyBackend with 10 concurrent workers.
+[Parallel(n_jobs=10)]: Done  30 out of  40 | elapsed:    1.0s remaining:    0.3s
+[Parallel(n_jobs=10)]: Done  40 out of  40 | elapsed:    1.1s finished
+======================================================================
+SDF CONDITIONAL MOMENTS CALCULATION
+======================================================================
+Panel ID: bgn_0
+Model: bgn
+Started at Sun 28 Dec 2025, 10:21AM
+======================================================================
+
+Loading panel from C:\Users\kerry\repos\CodeNew\NoIPCA\outputs\bgn_0_panel.pkl...
+Loaded arrays: N=50, T=400
+started import of vasicek at Sun 28 Dec 2025, 10:21AM
+finished import of vasicek at Sun 28 Dec 2025, 10:21AM
+
+----------------------------------------------------------------------
+Computing SDF conditional moments...
+----------------------------------------------------------------------
+Computing moments for months 660 to 699
+  Total: 40 months
+  Using parallel processing with n_jobs=10
+  Processing in 1 chunks of 100 months each
+----------------------------------------------------------------------
+
+Chunk 1/1: months 660 to 699 (40 months)
+  [OK] Chunk 1 saved to bgn_0_moments_chunk0.pkl
+
+----------------------------------------------------------------------
+[OK] All chunks computed in 1.3s (0.0 minutes)
+
+----------------------------------------------------------------------
+Consolidating chunks into final moments dictionary...
+----------------------------------------------------------------------
+  Loading chunk 1/1...
+  Sorting moments by month...
+[OK] Consolidated 40 months
+
+Saving consolidated moments to C:\Users\kerry\repos\CodeNew\NoIPCA\outputs\bgn_0_moments.pkl...
+[OK] Moments saved successfully
+
+Cleaning up temporary chunk files...
+  Deleted bgn_0_moments_chunk0.pkl
+[OK] Cleanup complete
+
+======================================================================
+COMPUTATION COMPLETE
+======================================================================
+Finished at Sun 28 Dec 2025, 10:21AM
+Total runtime: 2.7s (0.0 minutes)
+
+Output file: C:\Users\kerry\repos\CodeNew\NoIPCA\outputs\bgn_0_moments.pkl
+  Months: 660 to 699 (40 total)
+  Each month contains:
+    - rp: (50,) expected returns vector
+    - cond_var: (50, 50) conditional variance matrix
+    - second_moment: (50, 50) second moment matrix
+    - second_moment_inv: (50, 50) inverse second moment matrix
+    - sdf_ret: scalar SDF return
+    - max_sr: scalar maximum Sharpe ratio
+
+To load moments:
+  import pickle
+  with open('C:\Users\kerry\repos\CodeNew\NoIPCA\outputs\bgn_0_moments.pkl', 'rb') as f:
+      data = pickle.load(f)
+  moments = data['moments']
+  # Access specific month:
+  rp = moments[660]['rp']
+  cond_var = moments[660]['cond_var']
+======================================================================
+
+======================================================================
+STEP 3: Computing Fama-French and Fama-MacBeth factors
+======================================================================
+
+
+Loading panel from C:\Users\kerry\repos\CodeNew\NoIPCA\outputs\bgn_0_panel.pkl...
+Loaded panel: shape=(20000, 14)
+
+Panel after cleaning:
+  Start month: 300, End month: 699
+  Total observations: 20000
+======================================================================
+FAMA-FRENCH & FAMA-MACBETH FACTORS
+======================================================================
+Model: bgn
+Panel ID: bgn_0
+Configuration: N=50, T=400, n_jobs=10
+Methods: Fama-French, Fama-MacBeth
+Started at Sun 28 Dec 2025, 10:21AM
+======================================================================
+
+----------------------------------------------------------------------
+Computing Fama-French and Fama-MacBeth factors...
+[OK] Fama factors computed in 2.3s at 10:21AM
+
+----------------------------------------------------------------------
+Extracting model factors from array data...
+started import of vasicek at Sun 28 Dec 2025, 10:21AM
+finished import of vasicek at Sun 28 Dec 2025, 10:21AM
+  [OK] Taylor factors: (400, 2)
+  [OK] Projection factors: (400, 2)
+
+----------------------------------------------------------------------
+Computing portfolio statistics...
+  Alpha grids: Fama=[0]
+  [OK] Model stats: 800 observations
+  [OK] Fama stats: 80 observations
+[OK] Portfolio statistics computed in 0.8s
+
+Factor Returns Summary:
+  FF returns shape: (400, 6)
+  FM returns shape: (400, 6)
+  Model taylor returns shape: (400, 2)
+  Model proj returns shape: (400, 2)
+
+[OK] Results saved to: C:\Users\kerry\repos\CodeNew\NoIPCA\outputs\bgn_0_fama.pkl
+     Dictionary keys: ['ff_returns', 'fm_returns', 'fama_stats', 'model_premia_taylor', 'model_premia_proj', 'model_stats', 'panel_id', 'model', 'chars', 'start', 'end']
+
+     Contents:
+       ff_returns: DataFrame (400, 6)
+       fm_returns: DataFrame (400, 6)
+       fama_stats: DataFrame (80, 7)
+       model_premia_taylor: DataFrame (400, 2)
+       model_premia_proj: DataFrame (400, 2)
+       model_stats: DataFrame (800, 7)
+       panel_id: str = bgn_0
+       model: str = bgn
+       chars: list (length 5)
+       start: int64 = 300
+       end: int64 = 699
+
+Total runtime: 4.0s (0.1 minutes)
+
+======================================================================
+COMPUTATION COMPLETE
+======================================================================
+Finished at Sun 28 Dec 2025, 10:21AM
+
+Usage examples:
+  import pickle
+  with open('C:\Users\kerry\repos\CodeNew\NoIPCA\outputs\bgn_0_fama.pkl', 'rb') as f:
+      results = pickle.load(f)
+  ff = results['ff_returns']
+  fm = results['fm_returns']
+======================================================================
+[CLEANUP] Reduced bgn_0_fama.pkl: 0.10 MB -> 0.00 MB
+
+======================================================================
+STEP 4.1: Computing DKKM factors (nfeatures=6)
+======================================================================
+
+
+Loading panel from C:\Users\kerry\repos\CodeNew\NoIPCA\outputs\bgn_0_panel.pkl...
+Loaded panel: shape=(20000, 14)
+
+Panel after cleaning:
+  Start month: 300, End month: 699
+  Total observations: 20000
+======================================================================
+DKKM (RANDOM FOURIER FEATURES) FACTORS
+======================================================================
+Model: bgn
+Panel ID: bgn_0
+Configuration: N=50, T=400, n_jobs=10
+Features: 6
+Started at Sun 28 Dec 2025, 10:21AM
+======================================================================
+
+----------------------------------------------------------------------
+Computing DKKM factors...
+  Features: 6, Matrices: 1
+  Rank standardize: True
+  Weight matrix 1/1
+[ACCELERATION] Using Numba-accelerated DKKM functions
+[OK] DKKM factors computed in 2.0s at 10:21AM
+
+----------------------------------------------------------------------
+Computing portfolio statistics...
+  Alpha grid: [0, 0.0001, 0.001, 0.01, 0.05, 0.1, 1]
+  Include market: True
+  [OK] DKKM stats: 280 observations
+[OK] Portfolio statistics computed in 0.7s
+
+Factor Returns Summary:
+  DKKM: 1 weight matrices
+  Features: 6
+  Rank standardize: True
+
+[OK] Results saved to: C:\Users\kerry\repos\CodeNew\NoIPCA\outputs\bgn_0_dkkm_6.pkl
+     Dictionary keys: ['dkkm_factors', 'dkkm_stats', 'weights', 'nfeatures', 'nmat', 'rank_standardize', 'panel_id', 'model', 'chars', 'start', 'end']
+
+     Contents:
+       dkkm_factors: DataFrame (400, 6)
+       dkkm_stats: DataFrame (280, 8)
+       weights: ndarray (3, 6)
+       nfeatures: int = 6
+       nmat: int = 1
+       rank_standardize: bool = True
+       panel_id: str = bgn_0
+       model: str = bgn
+       chars: list (length 5)
+       start: int64 = 300
+       end: int64 = 699
+
+Total runtime: 2.7s (0.0 minutes)
+
+======================================================================
+COMPUTATION COMPLETE
+======================================================================
+Finished at Sun 28 Dec 2025, 10:21AM
+
+Usage examples:
+  import pickle
+  with open('C:\Users\kerry\repos\CodeNew\NoIPCA\outputs\bgn_0_dkkm_6.pkl', 'rb') as f:
+      results = pickle.load(f)
+  dkkm = results['dkkm_factors']
+======================================================================
+[CLEANUP] Reduced bgn_0_dkkm_6.pkl: 0.03 MB -> 0.02 MB
+
+======================================================================
+STEP 4.2: Computing DKKM factors (nfeatures=36)
+======================================================================
+
+
+Loading panel from C:\Users\kerry\repos\CodeNew\NoIPCA\outputs\bgn_0_panel.pkl...
+Loaded panel: shape=(20000, 14)
+
+Panel after cleaning:
+  Start month: 300, End month: 699
+  Total observations: 20000
+======================================================================
+DKKM (RANDOM FOURIER FEATURES) FACTORS
+======================================================================
+Model: bgn
+Panel ID: bgn_0
+Configuration: N=50, T=400, n_jobs=10
+Features: 36
+Started at Sun 28 Dec 2025, 10:21AM
+======================================================================
+
+----------------------------------------------------------------------
+Computing DKKM factors...
+  Features: 36, Matrices: 1
+  Rank standardize: True
+  Weight matrix 1/1
+[ACCELERATION] Using Numba-accelerated DKKM functions
+[OK] DKKM factors computed in 2.0s at 10:21AM
+
+----------------------------------------------------------------------
+Computing portfolio statistics...
+  Alpha grid: [0, 0.0001, 0.001, 0.01, 0.05, 0.1, 1]
+  Include market: True
+  [OK] DKKM stats: 280 observations
+[OK] Portfolio statistics computed in 0.8s
+
+Factor Returns Summary:
+  DKKM: 1 weight matrices
+  Features: 36
+  Rank standardize: True
+
+[OK] Results saved to: C:\Users\kerry\repos\CodeNew\NoIPCA\outputs\bgn_0_dkkm_36.pkl
+     Dictionary keys: ['dkkm_factors', 'dkkm_stats', 'weights', 'nfeatures', 'nmat', 'rank_standardize', 'panel_id', 'model', 'chars', 'start', 'end']
+
+     Contents:
+       dkkm_factors: DataFrame (400, 36)
+       dkkm_stats: DataFrame (280, 8)
+       weights: ndarray (18, 6)
+       nfeatures: int = 36
+       nmat: int = 1
+       rank_standardize: bool = True
+       panel_id: str = bgn_0
+       model: str = bgn
+       chars: list (length 5)
+       start: int64 = 300
+       end: int64 = 699
+
+Total runtime: 2.8s (0.0 minutes)
+
+======================================================================
+COMPUTATION COMPLETE
+======================================================================
+Finished at Sun 28 Dec 2025, 10:22AM
+
+Usage examples:
+  import pickle
+  with open('C:\Users\kerry\repos\CodeNew\NoIPCA\outputs\bgn_0_dkkm_36.pkl', 'rb') as f:
+      results = pickle.load(f)
+  dkkm = results['dkkm_factors']
+======================================================================
+[CLEANUP] Reduced bgn_0_dkkm_36.pkl: 0.08 MB -> 0.02 MB
+
+======================================================================
+STEP 4.3: Computing DKKM factors (nfeatures=360)
+======================================================================
+
+
+Loading panel from C:\Users\kerry\repos\CodeNew\NoIPCA\outputs\bgn_0_panel.pkl...
+Loaded panel: shape=(20000, 14)
+
+Panel after cleaning:
+  Start month: 300, End month: 699
+  Total observations: 20000
+======================================================================
+DKKM (RANDOM FOURIER FEATURES) FACTORS
+======================================================================
+Model: bgn
+Panel ID: bgn_0
+Configuration: N=50, T=400, n_jobs=10
+Features: 360
+Started at Sun 28 Dec 2025, 10:22AM
+======================================================================
+
+----------------------------------------------------------------------
+Computing DKKM factors...
+  Features: 360, Matrices: 1
+  Rank standardize: True
+  Weight matrix 1/1
+[ACCELERATION] Using Numba-accelerated DKKM functions
+[OK] DKKM factors computed in 2.0s at 10:22AM
+
+----------------------------------------------------------------------
+Computing portfolio statistics...
+  Alpha grid: [0, 0.0001, 0.001, 0.01, 0.05, 0.1, 1]
+  Include market: True
+  [OK] DKKM stats: 280 observations
+[OK] Portfolio statistics computed in 10.1s
+
+Factor Returns Summary:
+  DKKM: 1 weight matrices
+  Features: 360
+  Rank standardize: True
+
+[OK] Results saved to: C:\Users\kerry\repos\CodeNew\NoIPCA\outputs\bgn_0_dkkm_360.pkl
+     Dictionary keys: ['dkkm_factors', 'dkkm_stats', 'weights', 'nfeatures', 'nmat', 'rank_standardize', 'panel_id', 'model', 'chars', 'start', 'end']
+
+     Contents:
+       dkkm_factors: DataFrame (400, 360)
+       dkkm_stats: DataFrame (280, 8)
+       weights: ndarray (180, 6)
+       nfeatures: int = 360
+       nmat: int = 1
+       rank_standardize: bool = True
+       panel_id: str = bgn_0
+       model: str = bgn
+       chars: list (length 5)
+       start: int64 = 300
+       end: int64 = 699
+
+Total runtime: 12.2s (0.2 minutes)
+
+======================================================================
+COMPUTATION COMPLETE
+======================================================================
+Finished at Sun 28 Dec 2025, 10:22AM
+
+Usage examples:
+  import pickle
+  with open('C:\Users\kerry\repos\CodeNew\NoIPCA\outputs\bgn_0_dkkm_360.pkl', 'rb') as f:
+      results = pickle.load(f)
+  dkkm = results['dkkm_factors']
+======================================================================
+[CLEANUP] Reduced bgn_0_dkkm_360.pkl: 0.58 MB -> 0.02 MB
+
+======================================================================
+STEP 5.1: Computing IPCA factors (K=1)
+======================================================================
+
+C:\Users\kerry\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymanopt\optimizers\conjugate_gradient.py:67: RuntimeWarning: invalid value encountered in divide
+  manifold.inner_product(newx, Pnewgrad, diff)
+C:\Users\kerry\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymanopt\optimizers\conjugate_gradient.py:67: RuntimeWarning: invalid value encountered in divide
+  manifold.inner_product(newx, Pnewgrad, diff)
+C:\Users\kerry\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymanopt\optimizers\conjugate_gradient.py:67: RuntimeWarning: invalid value encountered in divide
+  manifold.inner_product(newx, Pnewgrad, diff)
+
+Loading panel from C:\Users\kerry\repos\CodeNew\NoIPCA\outputs\bgn_0_panel.pkl...
+Loaded panel: shape=(20000, 14)
+
+Panel after cleaning:
+  Start month: 300, End month: 699
+  Total observations: 20000
+======================================================================
+IPCA (INSTRUMENTED PRINCIPAL COMPONENT ANALYSIS)
+======================================================================
+Model: bgn
+Panel ID: bgn_0
+Configuration: N=50, T=400, n_jobs=10
+K (Latent Factors): 1
+Started at Sun 28 Dec 2025, 10:22AM
+======================================================================
+
+----------------------------------------------------------------------
+Computing IPCA factors...
+  Latent factors: 1
+  Random restarts: 3
+  Max iterations: 100
+  Sign normalize: True
+  Warm start: True
+[OK] IPCA factors computed in 33.0s at 10:22AM
+  Average iterations: 19.5
+  Windows computed: 40
+
+----------------------------------------------------------------------
+Computing IPCA factor returns...
+[OK] Factor returns: (40, 1)
+
+----------------------------------------------------------------------
+Computing portfolio statistics...
+  Alpha grid: [0, 0.0001, 0.001, 0.01, 0.05, 0.1, 1]
+  Include market: True
+  [OK] IPCA stats: 273 observations
+[OK] Portfolio statistics computed in 0.3s
+
+Factor Returns Summary:
+  IPCA factors: (40, 1)
+  Latent factors (K): 1
+  Windows: 40
+
+[OK] Results saved to: C:\Users\kerry\repos\CodeNew\NoIPCA\outputs\bgn_0_ipca_1.pkl
+     Dictionary keys: ['ipca_factors', 'ipca_weights', 'ipca_pi', 'ipca_stats', 'info_list', 'K', 'panel_id', 'model', 'chars', 'start', 'end']
+
+     Contents:
+       ipca_factors: DataFrame (40, 1)
+       ipca_weights: ndarray (1, 50, 40)
+       ipca_pi: ndarray (1, 40)
+       ipca_stats: DataFrame (273, 8)
+       info_list: list (length 40)
+       K: int = 1
+       panel_id: str = bgn_0
+       model: str = bgn
+       chars: list (length 5)
+       start: int64 = 300
+       end: int64 = 699
+
+Total runtime: 33.4s (0.6 minutes)
+
+======================================================================
+COMPUTATION COMPLETE
+======================================================================
+Finished at Sun 28 Dec 2025, 10:22AM
+
+Usage examples:
+  import pickle
+  with open('C:\Users\kerry\repos\CodeNew\NoIPCA\outputs\bgn_0_ipca_1.pkl', 'rb') as f:
+      results = pickle.load(f)
+  ipca = results['ipca_factors']
+======================================================================
+[CLEANUP] Reduced bgn_0_ipca_1.pkl: 0.03 MB -> 0.02 MB
+
+======================================================================
+STEP 5.2: Computing IPCA factors (K=2)
+======================================================================
+
+C:\Users\kerry\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymanopt\optimizers\conjugate_gradient.py:67: RuntimeWarning: invalid value encountered in divide
+  manifold.inner_product(newx, Pnewgrad, diff)
+C:\Users\kerry\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymanopt\optimizers\conjugate_gradient.py:67: RuntimeWarning: invalid value encountered in divide
+  manifold.inner_product(newx, Pnewgrad, diff)
+
+Loading panel from C:\Users\kerry\repos\CodeNew\NoIPCA\outputs\bgn_0_panel.pkl...
+Loaded panel: shape=(20000, 14)
+
+Panel after cleaning:
+  Start month: 300, End month: 699
+  Total observations: 20000
+======================================================================
+IPCA (INSTRUMENTED PRINCIPAL COMPONENT ANALYSIS)
+======================================================================
+Model: bgn
+Panel ID: bgn_0
+Configuration: N=50, T=400, n_jobs=10
+K (Latent Factors): 2
+Started at Sun 28 Dec 2025, 10:22AM
+======================================================================
+
+----------------------------------------------------------------------
+Computing IPCA factors...
+  Latent factors: 2
+  Random restarts: 3
+  Max iterations: 100
+  Sign normalize: True
+  Warm start: True
+[OK] IPCA factors computed in 48.4s at 10:23AM
+  Average iterations: 28.0
+  Windows computed: 40
+
+----------------------------------------------------------------------
+Computing IPCA factor returns...
+[OK] Factor returns: (40, 2)
+
+----------------------------------------------------------------------
+Computing portfolio statistics...
+  Alpha grid: [0, 0.0001, 0.001, 0.01, 0.05, 0.1, 1]
+  Include market: True
+  [OK] IPCA stats: 273 observations
+[OK] Portfolio statistics computed in 0.3s
+
+Factor Returns Summary:
+  IPCA factors: (40, 2)
+  Latent factors (K): 2
+  Windows: 40
+
+[OK] Results saved to: C:\Users\kerry\repos\CodeNew\NoIPCA\outputs\bgn_0_ipca_2.pkl
+     Dictionary keys: ['ipca_factors', 'ipca_weights', 'ipca_pi', 'ipca_stats', 'info_list', 'K', 'panel_id', 'model', 'chars', 'start', 'end']
+
+     Contents:
+       ipca_factors: DataFrame (40, 2)
+       ipca_weights: ndarray (2, 50, 40)
+       ipca_pi: ndarray (2, 40)
+       ipca_stats: DataFrame (273, 8)
+       info_list: list (length 40)
+       K: int = 2
+       panel_id: str = bgn_0
+       model: str = bgn
+       chars: list (length 5)
+       start: int64 = 300
+       end: int64 = 699
+
+Total runtime: 48.9s (0.8 minutes)
+
+======================================================================
+COMPUTATION COMPLETE
+======================================================================
+Finished at Sun 28 Dec 2025, 10:23AM
+
+Usage examples:
+  import pickle
+  with open('C:\Users\kerry\repos\CodeNew\NoIPCA\outputs\bgn_0_ipca_2.pkl', 'rb') as f:
+      results = pickle.load(f)
+  ipca = results['ipca_factors']
+======================================================================
+[CLEANUP] Reduced bgn_0_ipca_2.pkl: 0.05 MB -> 0.02 MB
+
+======================================================================
+STEP 5.3: Computing IPCA factors (K=3)
+======================================================================
+
+
+Loading panel from C:\Users\kerry\repos\CodeNew\NoIPCA\outputs\bgn_0_panel.pkl...
+Loaded panel: shape=(20000, 14)
+
+Panel after cleaning:
+  Start month: 300, End month: 699
+  Total observations: 20000
+======================================================================
+IPCA (INSTRUMENTED PRINCIPAL COMPONENT ANALYSIS)
+======================================================================
+Model: bgn
+Panel ID: bgn_0
+Configuration: N=50, T=400, n_jobs=10
+K (Latent Factors): 3
+Started at Sun 28 Dec 2025, 10:23AM
+======================================================================
+
+----------------------------------------------------------------------
+Computing IPCA factors...
+  Latent factors: 3
+  Random restarts: 3
+  Max iterations: 100
+  Sign normalize: True
+  Warm start: True
+[OK] IPCA factors computed in 88.7s at 10:25AM
+  Average iterations: 58.5
+  Windows computed: 40
+
+----------------------------------------------------------------------
+Computing IPCA factor returns...
+[OK] Factor returns: (40, 3)
+
+----------------------------------------------------------------------
+Computing portfolio statistics...
+  Alpha grid: [0, 0.0001, 0.001, 0.01, 0.05, 0.1, 1]
+  Include market: True
+  [OK] IPCA stats: 273 observations
+[OK] Portfolio statistics computed in 0.3s
+
+Factor Returns Summary:
+  IPCA factors: (40, 3)
+  Latent factors (K): 3
+  Windows: 40
+
+[OK] Results saved to: C:\Users\kerry\repos\CodeNew\NoIPCA\outputs\bgn_0_ipca_3.pkl
+     Dictionary keys: ['ipca_factors', 'ipca_weights', 'ipca_pi', 'ipca_stats', 'info_list', 'K', 'panel_id', 'model', 'chars', 'start', 'end']
+
+     Contents:
+       ipca_factors: DataFrame (40, 3)
+       ipca_weights: ndarray (3, 50, 40)
+       ipca_pi: ndarray (3, 40)
+       ipca_stats: DataFrame (273, 8)
+       info_list: list (length 40)
+       K: int = 3
+       panel_id: str = bgn_0
+       model: str = bgn
+       chars: list (length 5)
+       start: int64 = 300
+       end: int64 = 699
+
+Total runtime: 89.1s (1.5 minutes)
+
+======================================================================
+COMPUTATION COMPLETE
+======================================================================
+Finished at Sun 28 Dec 2025, 10:25AM
+
+Usage examples:
+  import pickle
+  with open('C:\Users\kerry\repos\CodeNew\NoIPCA\outputs\bgn_0_ipca_3.pkl', 'rb') as f:
+      results = pickle.load(f)
+  ipca = results['ipca_factors']
+======================================================================
+[CLEANUP] Reduced bgn_0_ipca_3.pkl: 0.07 MB -> 0.02 MB
+
+[CLEANUP] Deleted moments file (0.00 GB): C:\Users\kerry\repos\CodeNew\NoIPCA\outputs\bgn_0_moments.pkl
+[CLEANUP] Deleted panel file (0.19 GB): C:\Users\kerry\repos\CodeNew\NoIPCA\outputs\bgn_0_panel.pkl
+
+======================================================================
+WORKFLOW COMPLETE FOR BGN_0
+======================================================================
+Execution Times:
+  1. Generate panel:          4.3s (  0.1min)
+  2. Calculate moments:       3.2s (  0.1min)
+  3. Fama factors:            5.3s (  0.1min)
+  4.1 DKKM (n=   6):          4.2s (  0.1min)
+  4.2 DKKM (n=  36):          4.2s (  0.1min)
+  4.3 DKKM (n= 360):         13.6s (  0.2min)
+  5.1 IPCA (K=1):             36.6s (  0.6min)
+  5.2 IPCA (K=2):             51.8s (  0.9min)
+  5.3 IPCA (K=3):             91.9s (  1.5min)
+  --------------------------------------------------
+  Total for bgn_0:    215.2s (  3.6min)
+======================================================================
+
+
+======================================================================
+ALL WORKFLOWS COMPLETE
+======================================================================
+Finished at Sun 28 Dec 2025, 10:25AM
+
+Summary for BGN indices 0 to 0:
+  Total runs: 1
+  Successful: 1
+  Failed: 0
+  Total time:   215.6s (  3.6min)
+  Average time per successful run:   215.6s (  3.6min)
+
+Output files created in: C:\Users\kerry\repos\CodeNew\NoIPCA\outputs
+
+  Index 0 (bgn_0):
+    - Panel data: bgn_0_panel.pkl (deleted after use)
+    - SDF moments: bgn_0_moments.pkl (deleted after use)
+    - Fama factors: bgn_0_fama.pkl
+    - DKKM (n=6): bgn_0_dkkm_6.pkl
+    - DKKM (n=36): bgn_0_dkkm_36.pkl
+    - DKKM (n=360): bgn_0_dkkm_360.pkl
+    - IPCA (K=1): bgn_0_ipca_1.pkl
+    - IPCA (K=2): bgn_0_ipca_2.pkl
+    - IPCA (K=3): bgn_0_ipca_3.pkl
+
+Log file: C:\Users\kerry\repos\CodeNew\NoIPCA\logs\bgn_0_1.log
+======================================================================

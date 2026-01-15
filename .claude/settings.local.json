@@ -1,0 +1,36 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git init:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(del \".git\\index.lock\")",
+      "Bash(python:*)",
+      "Bash(dir:*)",
+      "Bash(nul)",
+      "Bash(gh auth status:*)",
+      "Bash(gh repo create:*)",
+      "Bash(del nul)",
+      "Bash(git push:*)",
+      "Bash(findstr:*)",
+      "Bash(git reset:*)",
+      "Bash(cat:*)",
+      "Bash(done)",
+      "Bash(jupyter nbconvert:*)",
+      "Bash(git restore:*)",
+      "Bash(copy:*)",
+      "Bash(timeout 180 python:*)",
+      "Bash(timeout 120 python:*)",
+      "Bash(timeout 600 python:*)",
+      "Bash(test_output_full.txt)",
+      "Bash(if [ -f test_output_full.txt ])",
+      "Bash(then tail -100 test_output_full.txt)",
+      "Bash(else echo \"File not created yet\")",
+      "Bash(fi)",
+      "Bash(cp:*)",
+      "Bash(timeout 600 jupyter nbconvert:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
