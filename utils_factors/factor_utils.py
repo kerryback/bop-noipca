@@ -25,7 +25,7 @@ try:
     from config import DATA_DIR
 except ImportError as e:
     print(f"Import error: {e}")
-    print("Make sure you're running from the Back-Ober-Pruitt directory")
+    print("Make sure you're running from the bop-noipca directory")
     sys.exit(1)
 
 

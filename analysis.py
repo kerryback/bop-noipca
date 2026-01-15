@@ -1,5 +1,5 @@
 """
-Analysis script to produce LaTeX tables from Back-Ober-Pruitt results.
+Analysis script to produce LaTeX tables from bop-noipca results.
 
 This script automatically discovers and analyzes all panels for each model (BGN, KP14, GS21),
 following the recipe from analysis.ipynb:
@@ -521,7 +521,7 @@ def generate_pdf():
         f.write(r"\geometry{margin=1in}" + "\n")
         f.write(r"\begin{document}" + "\n")
         f.write("\n")
-        f.write(r"\title{Back-Ober-Pruitt Factor Model Results}" + "\n")
+        f.write(r"\title{BOP-NoIPCA Factor Model Results}" + "\n")
         f.write(r"\author{}" + "\n")
         f.write(r"\date{\today}" + "\n")
         f.write(r"\maketitle" + "\n")

@@ -1,5 +1,5 @@
 """
-Back-Ober-Pruitt - Master Orchestration Script
+BOP-NoIPCA - Master Orchestration Script
 
 Runs the complete workflow for a range of panel identifiers:
 1. Generate panel data

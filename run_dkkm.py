@@ -38,8 +38,8 @@ try:
     from utils_factors import factor_utils
 except ImportError as e:
     print(f"Import error: {e}")
-    print("Make sure you're running from the Back-Ober-Pruitt directory:")
-    print("  cd Back-Ober-Pruitt")
+    print("Make sure you're running from the bop-noipca directory:")
+    print("  cd bop-noipca")
     print("  python run_dkkm.py")
     sys.exit(1)
 
