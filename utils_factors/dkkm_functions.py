@@ -203,23 +203,26 @@ def mve_data(
         # For alpha=0, just solve directly
         beta_0 = ridge_regression_grid(X, y, np.array([0]))[:, 0]
         betas_list = [beta_0]
+        actual_alphas = [0]  # Track actual alpha values
 
         # For alpha > 0, augment design matrix to avoid penalizing market
         for alpha in alpha_lst:
             if alpha > 0:
                 # Augment: don't penalize last column
-                # Penalty scales with nfeatures to match original code
+                # Note: alpha is already scaled by nfeatures in calling code (portfolio_stats.py)
                 X_aug = np.vstack([
                     X,
-                    np.sqrt(360 * nfeatures * alpha) * np.eye(X.shape[1])[:-1]
+                    np.sqrt(360 * alpha) * np.eye(X.shape[1])[:-1]
                 ])
                 y_aug = np.concatenate([y, np.zeros(X.shape[1] - 1)])
 
                 beta = ridge_regression_grid(X_aug, y_aug, np.array([0]))[:, 0]
                 betas_list.append(beta)
+                actual_alphas.append(alpha)
 
         # Stack coefficients
         betas = np.column_stack(betas_list)
+        alpha_lst = np.array(actual_alphas)  # Use actual computed alphas as column names
 
     else:
         # Standard ridge regression for all alphas at once

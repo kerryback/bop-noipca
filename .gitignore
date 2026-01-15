@@ -8,8 +8,6 @@ __pycache__/
 *.pickle
 pickle.txt
 
-config.py
-
 # Distribution / packaging
 .Python
 build/
