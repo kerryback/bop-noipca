@@ -240,7 +240,7 @@ def get_model_config(model_name):
     return config_module_name, config_file_path
 
 
-def run_script(script_name, args, description, config_module=None):
+def run_script(script_name, args, description, config_module=None, env=None):
     """
     Run a Python script and handle errors. Returns elapsed time in seconds.
 
@@ -249,6 +249,7 @@ def run_script(script_name, args, description, config_module=None):
         args: List of arguments to pass to the script
         description: Description to print
         config_module: Optional config module name to pass via --config
+        env: Optional environment variables dict (None = inherit parent environment)
     """
     print(f"\n{'='*70}")
     print(f"{description}")
@@ -260,7 +261,7 @@ def run_script(script_name, args, description, config_module=None):
 
     start_time = time.time()
     # Explicitly pass redirected stdout/stderr so subprocess output goes to log file
-    result = subprocess.run(cmd, stdout=sys.stdout, stderr=sys.stderr)
+    result = subprocess.run(cmd, stdout=sys.stdout, stderr=sys.stderr, env=env)
     elapsed = time.time() - start_time
 
     if result.returncode != 0:
@@ -298,7 +299,7 @@ def cleanup_factor_file(filepath, stats_key):
         print(f"[CLEANUP] Reduced {os.path.basename(filepath)}: {original_size:.2f} MB -> {new_size:.2f} MB")
 
 
-def run_workflow_for_index(model, panel_id, config_module=None, temp_config_obj=None):
+def run_workflow_for_index(model, panel_id, config_module=None, temp_config_obj=None, use_jgsrc1=False):
     """
     Run the complete workflow for a single panel index.
 
@@ -307,11 +308,21 @@ def run_workflow_for_index(model, panel_id, config_module=None, temp_config_obj=
         panel_id: Panel index
         config_module: Optional config module name to pass to subprocesses
         temp_config_obj: Optional config module object for TEMP_DIR lookups
+        use_jgsrc1: If True, set NUMBA_NUM_THREADS=1 to avoid nested parallelism
     """
     full_panel_id = f"{model}_{panel_id}"
 
     # Use temp_config_obj if provided, otherwise fall back to global config
     cfg = temp_config_obj if temp_config_obj is not None else config
+
+    # Prepare environment for subprocesses
+    # When use_jgsrc1=True, disable Numba's automatic parallelism to avoid
+    # nested parallelism (joblib n_jobs=10 over months × Numba threads per month)
+    subprocess_env = None
+    if use_jgsrc1:
+        subprocess_env = os.environ.copy()
+        subprocess_env['NUMBA_NUM_THREADS'] = '1'
+        print(f"[PARALLELISM] Set NUMBA_NUM_THREADS=1 (avoid nested parallelism with n_jobs=10)")
 
     print(f"\n{'='*70}")
     print(f"RUNNING WORKFLOW FOR {full_panel_id.upper()}")
@@ -325,7 +336,8 @@ def run_workflow_for_index(model, panel_id, config_module=None, temp_config_obj=
         "generate_panel.py",
         [model, str(panel_id)],
         f"STEP 1: Generating {model.upper()} panel data (index={panel_id})",
-        config_module=config_module
+        config_module=config_module,
+        env=subprocess_env
     )
 
     # Step 2: Calculate SDF conditional moments
@@ -333,7 +345,8 @@ def run_workflow_for_index(model, panel_id, config_module=None, temp_config_obj=
         "calculate_moments.py",
         [full_panel_id],
         "STEP 2: Calculating SDF conditional moments (rp, cond_var, etc.)",
-        config_module=config_module
+        config_module=config_module,
+        env=subprocess_env
     )
 
     # Step 3: Compute Fama factors
@@ -341,7 +354,8 @@ def run_workflow_for_index(model, panel_id, config_module=None, temp_config_obj=
         "run_fama.py",
         [full_panel_id],
         "STEP 3: Computing Fama-French and Fama-MacBeth factors",
-        config_module=config_module
+        config_module=config_module,
+        env=subprocess_env
     )
 
     # Clean up Fama file if requested
@@ -356,7 +370,8 @@ def run_workflow_for_index(model, panel_id, config_module=None, temp_config_obj=
             "run_dkkm.py",
             [full_panel_id, str(nfeatures)],
             f"STEP 4.{i}: Computing DKKM factors (nfeatures={nfeatures})",
-            config_module=config_module
+            config_module=config_module,
+            env=subprocess_env
         )
 
         # Clean up DKKM file if requested
@@ -511,7 +526,7 @@ def main():
         failed_indices = []
         for i in range(start, end):
             try:
-                all_timings[i] = run_workflow_for_index(model, i, config_module=config_module, temp_config_obj=temp_config)
+                all_timings[i] = run_workflow_for_index(model, i, config_module=config_module, temp_config_obj=temp_config, use_jgsrc1=use_jgsrc1)
             except Exception as e:
                 failed_indices.append(i)
 
