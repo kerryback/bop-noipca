@@ -11,3 +11,6 @@ joblib>=1.1.0
 
 # JIT compilation for performance acceleration
 numba>=0.56.0
+
+# AWS S3 integration for result storage
+boto3>=1.26.0
