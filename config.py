@@ -15,7 +15,7 @@ T = 720   # Number of time periods (excluding burnin)
 BGN_BURNIN = 300  # BGN burnin period
 KP14_BURNIN = 300  # KP14 burnin period
 GS21_BURNIN = 300  # GS21 burnin period
-N_JOBS = 20  # Number of parallel jobs
+N_JOBS = 24  # Number of parallel jobs
 
 # =============================================================================
 # DATA DIRECTORY CONFIGURATION
