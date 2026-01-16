@@ -22,7 +22,7 @@ from typing import Tuple, Dict, Any, Optional
 
 # Import configurations
 try:
-    from config import DATA_DIR
+    from config import DATA_DIR, TEMP_DIR
 except ImportError as e:
     print(f"Import error: {e}")
     print("Make sure you're running from the bop-noipca directory")
@@ -114,7 +114,7 @@ def load_panel_data(panel_id: str, model_name: str) -> Tuple[pd.DataFrame, Dict[
     Raises:
         SystemExit: If file not found
     """
-    panel_path = os.path.join(DATA_DIR, f"{panel_id}_panel.pkl")
+    panel_path = os.path.join(TEMP_DIR, f"{panel_id}_panel.pkl")
 
     if not os.path.exists(panel_path):
         print(f"ERROR: Panel file not found at: {panel_path}")

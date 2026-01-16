@@ -32,7 +32,7 @@ from datetime import datetime
 # Add current directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from config import DATA_DIR
+from config import TEMP_DIR
 
 
 def main():
@@ -127,8 +127,8 @@ def main():
         zero_bm_count = None
         print("\nWarning: 'bm' column not found, cannot count zero book-to-market")
 
-    # Save panel and arrays to data directory
-    panel_filename = os.path.join(DATA_DIR, f'{model_name}_{identifier}_panel.pkl')
+    # Save panel and arrays to temporary directory
+    panel_filename = os.path.join(TEMP_DIR, f'{model_name}_{identifier}_panel.pkl')
 
     print(f"\n{'-'*70}")
     print(f"Saving panel and arrays to {panel_filename}...")

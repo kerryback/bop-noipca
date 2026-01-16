@@ -8,19 +8,20 @@ Runs the complete workflow for a range of panel identifiers:
 4. Compute DKKM factors for multiple feature counts
 
 Usage:
-    python main.py [model] [start] [end]
+    python main.py [model] [start] [end] [--scratch]
 
 Arguments:
     model: Model name (bgn, kp14, gs21) - case insensitive
     start: Starting index (optional, default: 0)
     end: Ending index (optional, default: 1)
+    --scratch: Use /opt/scratch/keb7 for temporary files (optional)
 
     Runs workflow for panel_id in range(start, end)
 
 Examples:
-    python main.py bgn           # Runs for index 0 only
-    python main.py bgn 0 5       # Runs for indices 0, 1, 2, 3, 4
-    python main.py kp14 10 15    # Runs for indices 10, 11, 12, 13, 14
+    python main.py bgn                    # Runs for index 0, temp in outputs/
+    python main.py bgn 0 5                # Runs for indices 0-4, temp in outputs/
+    python main.py kp14 10 15 --scratch   # Runs for indices 10-14, temp in /opt/scratch/keb7
 
 Output:
     All output is logged to: logs/{model}_{start}_{end}.log
@@ -32,6 +33,7 @@ import subprocess
 import time
 import pickle
 from datetime import datetime
+import config
 from config import (DATA_DIR, N_DKKM_FEATURES_LIST,
                     KEEP_PANEL, KEEP_MOMENTS, KEEP_FACTOR_DETAILS,
                     N, T, BGN_BURNIN, KP14_BURNIN, GS21_BURNIN)
@@ -137,7 +139,7 @@ def run_workflow_for_index(model, panel_id):
 
     # Step 5: Clean up moments and panel files to save disk space
     if not KEEP_MOMENTS:
-        moments_file = os.path.join(DATA_DIR, f"{full_panel_id}_moments.pkl")
+        moments_file = os.path.join(config.TEMP_DIR, f"{full_panel_id}_moments.pkl")
         if os.path.exists(moments_file):
             file_size = os.path.getsize(moments_file) / (1024**3)  # Size in GB
             os.remove(moments_file)
@@ -146,7 +148,7 @@ def run_workflow_for_index(model, panel_id):
         print(f"\n[KEEP] Keeping moments file (KEEP_MOMENTS=True)")
 
     if not KEEP_PANEL:
-        panel_file = os.path.join(DATA_DIR, f"{full_panel_id}_panel.pkl")
+        panel_file = os.path.join(config.TEMP_DIR, f"{full_panel_id}_panel.pkl")
         if os.path.exists(panel_file):
             file_size = os.path.getsize(panel_file) / (1024**3)  # Size in GB
             os.remove(panel_file)
@@ -195,15 +197,22 @@ def main():
     # Parse arguments
     if len(sys.argv) < 2:
         print("ERROR: Model name required")
-        print("\nUsage: python main.py [model] [start] [end]")
+        print("\nUsage: python main.py [model] [start] [end] [--scratch]")
         print("  model: bgn, kp14, or gs21 (case insensitive)")
         print("  start: starting index (optional, default: 0)")
         print("  end: ending index (optional, default: 1)")
+        print("  --scratch: use /opt/scratch/keb7 for temporary files (optional)")
         print("\nExamples:")
-        print("  python main.py bgn           # Runs for index 0")
-        print("  python main.py bgn 0 5       # Runs for indices 0-4")
-        print("  python main.py kp14 10 15    # Runs for indices 10-14")
+        print("  python main.py bgn                   # Runs for index 0")
+        print("  python main.py bgn 0 5               # Runs for indices 0-4")
+        print("  python main.py kp14 10 15 --scratch  # Runs for indices 10-14 with scratch")
         sys.exit(1)
+
+    # Check for --scratch flag
+    use_scratch = '--scratch' in sys.argv
+    if use_scratch:
+        sys.argv.remove('--scratch')
+        config.set_temp_dir('/opt/scratch/keb7')
 
     # Get model name (case insensitive)
     model = sys.argv[1].lower()
@@ -254,6 +263,14 @@ def main():
         print(f"  DKKM features: {N_DKKM_FEATURES_LIST}")
         print(f"  Log file: {log_file}")
         print()
+        print(f"Directories:")
+        print(f"  DATA_DIR (permanent): {DATA_DIR}")
+        print(f"  TEMP_DIR (temporary): {config.TEMP_DIR}")
+        if config.TEMP_DIR == DATA_DIR:
+            print(f"    (using DATA_DIR for temporary files)")
+        else:
+            print(f"    (using separate scratch directory)")
+        print()
 
         # Run workflow for each index in range
         all_timings = {}
@@ -266,14 +283,14 @@ def main():
 
                 # Clean up moments and panel files for failed panel (if they exist)
                 if not KEEP_MOMENTS:
-                    moments_file = os.path.join(DATA_DIR, f"{model}_{i}_moments.pkl")
+                    moments_file = os.path.join(config.TEMP_DIR, f"{model}_{i}_moments.pkl")
                     if os.path.exists(moments_file):
                         file_size = os.path.getsize(moments_file) / (1024**3)  # Size in GB
                         os.remove(moments_file)
                         print(f"\n[CLEANUP] Deleted moments file for failed panel ({file_size:.2f} GB): {moments_file}")
 
                 if not KEEP_PANEL:
-                    panel_file = os.path.join(DATA_DIR, f"{model}_{i}_panel.pkl")
+                    panel_file = os.path.join(config.TEMP_DIR, f"{model}_{i}_panel.pkl")
                     if os.path.exists(panel_file):
                         file_size = os.path.getsize(panel_file) / (1024**3)  # Size in GB
                         os.remove(panel_file)

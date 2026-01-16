@@ -24,12 +24,30 @@ N_JOBS = 24  # Number of parallel jobs
 # Get the directory containing this config file (root/)
 _CONFIG_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# Data directory for all pickle files (arrays and results)
+# Data directory for permanent output files (fama, dkkm results)
 # Relative to root/ (outputs/ subdirectory within root/)
 DATA_DIR = os.path.join(_CONFIG_DIR, 'outputs')
 
+# Temporary directory for intermediate files (panel, moments, chunks)
+# These files are deleted based on KEEP_PANEL and KEEP_MOMENTS flags
+# Default: same as DATA_DIR (can be overridden by set_temp_dir())
+TEMP_DIR = DATA_DIR
+
 # Create data directory if it doesn't exist
 os.makedirs(DATA_DIR, exist_ok=True)
+
+
+def set_temp_dir(temp_path):
+    """
+    Set the temporary directory path and create it if needed.
+
+    Args:
+        temp_path: Path to temporary directory (e.g., '/opt/scratch/keb7')
+    """
+    global TEMP_DIR
+    TEMP_DIR = temp_path
+    os.makedirs(TEMP_DIR, exist_ok=True)
+    print(f"[CONFIG] TEMP_DIR set to: {TEMP_DIR}")
 
 # =============================================================================
 # FILE MANAGEMENT FLAGS

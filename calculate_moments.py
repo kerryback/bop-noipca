@@ -30,7 +30,7 @@ from joblib import Parallel, delayed
 # Add current directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from config import DATA_DIR
+from config import TEMP_DIR
 
 
 def compute_month_moments(sdf_loop, month):
@@ -97,7 +97,7 @@ def main():
     print("="*70)
 
     # Load panel data
-    panel_path = os.path.join(DATA_DIR, f"{panel_id}_panel.pkl")
+    panel_path = os.path.join(TEMP_DIR, f"{panel_id}_panel.pkl")
 
     if not os.path.exists(panel_path):
         print(f"ERROR: Panel file not found at: {panel_path}")
@@ -177,7 +177,7 @@ def main():
         chunk_moments = {month: moments_dict for month, moments_dict in chunk_results}
 
         # Save chunk to temporary file
-        chunk_file = os.path.join(DATA_DIR, f"{panel_id}_moments_chunk{chunk_idx}.pkl")
+        chunk_file = os.path.join(TEMP_DIR, f"{panel_id}_moments_chunk{chunk_idx}.pkl")
         with open(chunk_file, 'wb') as f:
             pickle.dump(chunk_moments, f)
         chunk_files.append(chunk_file)
@@ -213,7 +213,7 @@ def main():
     print(f"[OK] Consolidated {len(moments)} months")
 
     # Save moments to file
-    output_file = os.path.join(DATA_DIR, f"{panel_id}_moments.pkl")
+    output_file = os.path.join(TEMP_DIR, f"{panel_id}_moments.pkl")
 
     print(f"\nSaving consolidated moments to {output_file}...")
     with open(output_file, 'wb') as f:

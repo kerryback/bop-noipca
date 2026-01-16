@@ -14,7 +14,7 @@ import pickle
 import os
 from typing import Tuple, Dict, Callable
 
-from config import DATA_DIR
+from config import DATA_DIR, TEMP_DIR
 from . import fama_functions as fama
 from . import dkkm_functions as dkkm
 from .ridge_utils import ridge_regression_grid
@@ -32,7 +32,7 @@ def load_precomputed_moments(panel_id: str) -> Tuple[Dict, int, int, int]:
         moments dict has structure: {month: {'rp', 'cond_var', 'second_moment', 'second_moment_inv', ...}}
     """
     # Load the moments pickle file
-    moments_file = os.path.join(DATA_DIR, f'{panel_id}_moments.pkl')
+    moments_file = os.path.join(TEMP_DIR, f'{panel_id}_moments.pkl')
 
     if not os.path.exists(moments_file):
         raise FileNotFoundError(
