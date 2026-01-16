@@ -298,7 +298,7 @@ def cleanup_factor_file(filepath, stats_key):
         print(f"[CLEANUP] Reduced {os.path.basename(filepath)}: {original_size:.2f} MB -> {new_size:.2f} MB")
 
 
-def run_workflow_for_index(model, panel_id, config_module=None):
+def run_workflow_for_index(model, panel_id, config_module=None, temp_config_obj=None):
     """
     Run the complete workflow for a single panel index.
 
@@ -306,8 +306,12 @@ def run_workflow_for_index(model, panel_id, config_module=None):
         model: Model name (bgn, kp14, gs21)
         panel_id: Panel index
         config_module: Optional config module name to pass to subprocesses
+        temp_config_obj: Optional config module object for TEMP_DIR lookups
     """
     full_panel_id = f"{model}_{panel_id}"
+
+    # Use temp_config_obj if provided, otherwise fall back to global config
+    cfg = temp_config_obj if temp_config_obj is not None else config
 
     print(f"\n{'='*70}")
     print(f"RUNNING WORKFLOW FOR {full_panel_id.upper()}")
@@ -362,7 +366,7 @@ def run_workflow_for_index(model, panel_id, config_module=None):
 
     # Step 5: Clean up moments and panel files to save disk space
     if not KEEP_MOMENTS:
-        moments_file = os.path.join(config.TEMP_DIR, f"{full_panel_id}_moments.pkl")
+        moments_file = os.path.join(cfg.TEMP_DIR, f"{full_panel_id}_moments.pkl")
         if os.path.exists(moments_file):
             file_size = os.path.getsize(moments_file) / (1024**3)  # Size in GB
             os.remove(moments_file)
@@ -371,7 +375,7 @@ def run_workflow_for_index(model, panel_id, config_module=None):
         print(f"\n[KEEP] Keeping moments file (KEEP_MOMENTS=True)")
 
     if not KEEP_PANEL:
-        panel_file = os.path.join(config.TEMP_DIR, f"{full_panel_id}_panel.pkl")
+        panel_file = os.path.join(cfg.TEMP_DIR, f"{full_panel_id}_panel.pkl")
         if os.path.exists(panel_file):
             file_size = os.path.getsize(panel_file) / (1024**3)  # Size in GB
             os.remove(panel_file)
@@ -457,6 +461,10 @@ def main():
     # Create temporary config file
     config_module, config_file_path = create_temp_config(model, start, end, use_jgsrc1)
 
+    # Import the temp config module for use in logging
+    import importlib
+    temp_config = importlib.import_module(config_module)
+
     # Setup logging
     script_dir = os.path.dirname(os.path.abspath(__file__))
     os.chdir(script_dir)
@@ -486,13 +494,13 @@ def main():
         print(f"  Index range: {start} to {end-1} (inclusive)")
         print(f"  Total runs: {end - start}")
         print(f"  DKKM features: {N_DKKM_FEATURES_LIST}")
-        print(f"  N_JOBS: {config.N_JOBS}")
+        print(f"  N_JOBS: {temp_config.N_JOBS}")
         print(f"  Log file: {log_file}")
         print()
         print(f"Directories:")
         print(f"  DATA_DIR (permanent): {DATA_DIR}")
-        print(f"  TEMP_DIR (temporary): {config.TEMP_DIR}")
-        if config.TEMP_DIR == DATA_DIR:
+        print(f"  TEMP_DIR (temporary): {temp_config.TEMP_DIR}")
+        if temp_config.TEMP_DIR == DATA_DIR:
             print(f"    (using DATA_DIR for temporary files)")
         else:
             print(f"    (using separate scratch directory)")
@@ -503,20 +511,20 @@ def main():
         failed_indices = []
         for i in range(start, end):
             try:
-                all_timings[i] = run_workflow_for_index(model, i, config_module=config_module)
+                all_timings[i] = run_workflow_for_index(model, i, config_module=config_module, temp_config_obj=temp_config)
             except Exception as e:
                 failed_indices.append(i)
 
                 # Clean up moments and panel files for failed panel (if they exist)
                 if not KEEP_MOMENTS:
-                    moments_file = os.path.join(config.TEMP_DIR, f"{model}_{i}_moments.pkl")
+                    moments_file = os.path.join(temp_config.TEMP_DIR, f"{model}_{i}_moments.pkl")
                     if os.path.exists(moments_file):
                         file_size = os.path.getsize(moments_file) / (1024**3)  # Size in GB
                         os.remove(moments_file)
                         print(f"\n[CLEANUP] Deleted moments file for failed panel ({file_size:.2f} GB): {moments_file}")
 
                 if not KEEP_PANEL:
-                    panel_file = os.path.join(config.TEMP_DIR, f"{model}_{i}_panel.pkl")
+                    panel_file = os.path.join(temp_config.TEMP_DIR, f"{model}_{i}_panel.pkl")
                     if os.path.exists(panel_file):
                         file_size = os.path.getsize(panel_file) / (1024**3)  # Size in GB
                         os.remove(panel_file)
