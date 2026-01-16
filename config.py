@@ -16,6 +16,7 @@ BGN_BURNIN = 300  # BGN burnin period
 KP14_BURNIN = 300  # KP14 burnin period
 GS21_BURNIN = 300  # GS21 burnin period
 N_JOBS = 24  # Number of parallel jobs
+NUMBA_NUM_THREADS = 1  # Numba threads per job (1 = no nested parallelism)
 
 # =============================================================================
 # DATA DIRECTORY CONFIGURATION

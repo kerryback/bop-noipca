@@ -80,6 +80,7 @@ BGN_BURNIN = {config.BGN_BURNIN}
 KP14_BURNIN = {config.KP14_BURNIN}
 GS21_BURNIN = {config.GS21_BURNIN}
 N_JOBS = {n_jobs}  # {'Override for jgsrc1' if use_jgsrc1 else 'Default'}
+NUMBA_NUM_THREADS = {config.NUMBA_NUM_THREADS}  # Numba threads per job
 
 # =============================================================================
 # DATA DIRECTORY CONFIGURATION
@@ -316,13 +317,11 @@ def run_workflow_for_index(model, panel_id, config_module=None, temp_config_obj=
     cfg = temp_config_obj if temp_config_obj is not None else config
 
     # Prepare environment for subprocesses
-    # When use_jgsrc1=True, disable Numba's automatic parallelism to avoid
-    # nested parallelism (joblib n_jobs=10 over months × Numba threads per month)
-    subprocess_env = None
-    if use_jgsrc1:
-        subprocess_env = os.environ.copy()
-        subprocess_env['NUMBA_NUM_THREADS'] = '1'
-        print(f"[PARALLELISM] Set NUMBA_NUM_THREADS=1 (avoid nested parallelism with n_jobs=10)")
+    # Set NUMBA_NUM_THREADS from config to control Numba's parallelism
+    # Default: NUMBA_NUM_THREADS=1 to avoid nested parallelism with joblib
+    subprocess_env = os.environ.copy()
+    subprocess_env['NUMBA_NUM_THREADS'] = str(cfg.NUMBA_NUM_THREADS)
+    print(f"[PARALLELISM] Set NUMBA_NUM_THREADS={cfg.NUMBA_NUM_THREADS} (avoid nested parallelism with n_jobs={cfg.N_JOBS})")
 
     print(f"\n{'='*70}")
     print(f"RUNNING WORKFLOW FOR {full_panel_id.upper()}")
