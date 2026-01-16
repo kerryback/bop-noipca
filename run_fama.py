@@ -32,7 +32,7 @@ import time
 import importlib
 import pickle
 
-# Parse --config argument before other imports
+# Parse optional --config argument (defaults to 'config' if not provided)
 config_module_name = 'config'
 if '--config' in sys.argv:
     config_idx = sys.argv.index('--config')
@@ -41,8 +41,10 @@ if '--config' in sys.argv:
     sys.argv.pop(config_idx)
     sys.argv.pop(config_idx)
 
-# Import config module dynamically
+# Import config module dynamically and inject into sys.modules
+# This ensures utility modules that do "from config import" get the correct config
 config = importlib.import_module(config_module_name)
+sys.modules['config'] = config
 
 # Import refactored modules
 try:
