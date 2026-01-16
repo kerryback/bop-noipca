@@ -17,11 +17,19 @@ print(f"Started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 print()
 
 log_file = "/app/logs/kp14_0_10.log"
-last_position = 0
-last_update = time.time()
+runtime_log_file = "/app/logs/kp14_0_10_runtime.log"
+
+# Open runtime log file to capture all stdout/stderr
+runtime_log = open(runtime_log_file, 'w', buffering=1)
 
 # Start the workflow and stream output in real-time
 print("Starting workflow...")
+runtime_log.write("="*70 + "\n")
+runtime_log.write(f"Starting KP14 workflow: indices 0-9\n")
+runtime_log.write("="*70 + "\n\n")
+runtime_log.write(f"Executing: {' '.join(cmd)}\n")
+runtime_log.write(f"Started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
+
 process = subprocess.Popen(
     cmd,
     stdout=subprocess.PIPE,
@@ -31,40 +39,60 @@ process = subprocess.Popen(
 )
 
 print(f"Process started (PID: {process.pid})")
+runtime_log.write(f"Process started (PID: {process.pid})\n")
+runtime_log.write("="*70 + "\n\n")
 print("="*70)
 print()
 
 try:
-    # Stream output in real-time
+    # Stream output in real-time and save to runtime log
     for line in iter(process.stdout.readline, ''):
         if line:
             print(line.rstrip())
+            runtime_log.write(line)
 
     # Wait for process to complete
     return_code = process.wait()
+    runtime_log.flush()
 
-    print("\n" + "="*70)
-    print(f"WORKFLOW COMPLETED at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    print(f"Exit code: {return_code}")
-    print("="*70)
+    completion_msg = "\n" + "="*70 + "\n"
+    completion_msg += f"WORKFLOW COMPLETED at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+    completion_msg += f"Exit code: {return_code}\n"
+    completion_msg += "="*70 + "\n"
+
+    print(completion_msg)
+    runtime_log.write(completion_msg)
 
     if return_code == 0:
-        print("\n✓ WORKFLOW COMPLETED SUCCESSFULLY")
+        success_msg = "\n✓ WORKFLOW COMPLETED SUCCESSFULLY\n"
+        print(success_msg)
+        runtime_log.write(success_msg)
     else:
-        print(f"\n✗ WORKFLOW FAILED WITH EXIT CODE: {return_code}")
+        fail_msg = f"\n✗ WORKFLOW FAILED WITH EXIT CODE: {return_code}\n"
+        print(fail_msg)
+        runtime_log.write(fail_msg)
 
 except KeyboardInterrupt:
-    print("\n\nInterrupted! Terminating workflow...")
+    interrupt_msg = "\n\nInterrupted! Terminating workflow...\n"
+    print(interrupt_msg)
+    runtime_log.write(interrupt_msg)
     process.terminate()
     process.wait(timeout=10)
-    print("Workflow terminated.")
+    terminate_msg = "Workflow terminated.\n"
+    print(terminate_msg)
+    runtime_log.write(terminate_msg)
 
 except Exception as e:
-    print("\n" + "="*70)
-    print(f"ERROR: {e}")
-    print("="*70)
+    error_msg = "\n" + "="*70 + "\n"
+    error_msg += f"ERROR: {e}\n"
+    error_msg += "="*70 + "\n"
+    print(error_msg)
+    runtime_log.write(error_msg)
+
     import traceback
-    traceback.print_exc()
+    traceback_str = traceback.format_exc()
+    print(traceback_str)
+    runtime_log.write(traceback_str)
 
     # Try to terminate process
     try:
@@ -72,6 +100,10 @@ except Exception as e:
         process.wait(timeout=10)
     except:
         pass
+
+finally:
+    # Close runtime log file
+    runtime_log.close()
 
 # Upload results to S3 (if configured) or warn about data loss
 print("\n" + "="*70)
