@@ -73,7 +73,7 @@ except Exception as e:
     except:
         pass
 
-# Upload results to S3 (if configured)
+# Upload results to S3 (if configured) or warn about data loss
 print("\n" + "="*70)
 print("Workflow finished. Uploading results to S3...")
 print("="*70)
@@ -95,31 +95,27 @@ if s3_configured:
             print("\n✓ Results uploaded successfully to S3")
         else:
             print("\n✗ S3 upload failed (see errors above)")
-            print("WARNING: Results are still available in container")
+            print("WARNING: Results will be lost when container exits")
 
     except Exception as e:
         print(f"\n✗ Error uploading to S3: {e}")
-        print("WARNING: Results are still available in container")
+        print("WARNING: Results will be lost when container exits")
         import traceback
         traceback.print_exc()
 else:
-    print("S3 not configured - skipping upload")
-    print("Set S3_BUCKET and AWS_ACCESS_KEY_ID environment variables to enable S3 upload")
+    print("⚠️  S3 NOT CONFIGURED - Results will be LOST when container exits!")
     print()
-    print("Keeping container alive for manual result retrieval...")
-    print(f"Full logs available at: {log_file}")
+    print("To preserve results, configure S3 environment variables:")
+    print("  - S3_BUCKET")
+    print("  - AWS_ACCESS_KEY_ID")
+    print("  - AWS_SECRET_ACCESS_KEY")
     print()
-    print("To download results:")
-    print("  koyeb instances cp <INSTANCE_ID>:/app/logs/ ./local_logs/")
-    print("  koyeb instances cp <INSTANCE_ID>:/app/outputs/ ./local_outputs/")
+    print("See S3_SETUP.md for configuration instructions.")
     print()
-    print("Sleeping indefinitely...")
+    print("Container will exit in 30 seconds to stop billing...")
+    time.sleep(30)
 
-    # Sleep forever to keep container running
-    while True:
-        time.sleep(3600)
-
-# Exit cleanly if S3 upload succeeded
+# Exit cleanly to stop instance billing
 print("\n" + "="*70)
 print("Container exiting...")
 print("="*70)
