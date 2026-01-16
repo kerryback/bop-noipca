@@ -6,15 +6,16 @@ extracting common workflow logic while delegating model-specific operations
 to the appropriate panel_functions module.
 
 Usage:
-    python generate_panel.py <model> [identifier]
+    python generate_panel.py <model> [identifier] [--config CONFIG_MODULE]
 
 Arguments:
     model: Model name ('bgn', 'kp14', or 'gs21')
     identifier: Optional integer identifier (default: 0)
+    --config: Optional config module name (default: 'config')
 
 Examples:
     python generate_panel.py bgn 0
-    python generate_panel.py kp14 5
+    python generate_panel.py kp14 5 --config temp_config_xyz
     python generate_panel.py gs21 3
 
 Output:
@@ -28,21 +29,32 @@ import pandas as pd
 import pickle
 import time
 from datetime import datetime
+import importlib
 
 # Add current directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-
-from config import TEMP_DIR
 
 
 def main():
     """Main execution function."""
     start_time = time.time()
 
+    # Parse --config argument
+    config_module_name = 'config'
+    if '--config' in sys.argv:
+        config_idx = sys.argv.index('--config')
+        config_module_name = sys.argv[config_idx + 1]
+        # Remove --config and its value from sys.argv
+        sys.argv.pop(config_idx)
+        sys.argv.pop(config_idx)
+
+    # Import config module dynamically
+    config = importlib.import_module(config_module_name)
+
     # Parse command-line arguments
     if len(sys.argv) < 2:
         print("ERROR: Model name required")
-        print("\nUsage: python generate_panel.py <model> [identifier]")
+        print("\nUsage: python generate_panel.py <model> [identifier] [--config CONFIG_MODULE]")
         print("  Models: bgn, kp14, gs21")
         print("  Example: python generate_panel.py bgn 0")
         print("           python generate_panel.py kp14 5")
@@ -71,28 +83,28 @@ def main():
     print(f"Started at {datetime.now().strftime('%a %d %b %Y, %I:%M%p')}")
     print("="*70)
 
-    # Import appropriate panel generation module and burnin
+    # Import appropriate panel generation module
     if model_name == 'bgn':
         from utils_bgn import panel_functions_bgn as panel_module
-        from config import BGN_BURNIN as burnin
+        burnin = config.BGN_BURNIN
     elif model_name == 'kp14':
         from utils_kp14 import panel_functions_kp14 as panel_module
-        from config import KP14_BURNIN as burnin
+        burnin = config.KP14_BURNIN
     elif model_name == 'gs21':
         from utils_gs21 import panel_functions_gs21 as panel_module
-        from config import GS21_BURNIN as burnin
+        burnin = config.GS21_BURNIN
     else:
         print(f"ERROR: Unknown model: {model_name}")
         sys.exit(1)
 
     # Get model configuration
-    from config import get_model_config, N, T
-    model_config = get_model_config(model_name)
+    model_config = config.get_model_config(model_name)
 
-    # Parameters for panel generation (from config.py)
-    # N and T are imported from config
+    # Parameters for panel generation
+    N = config.N
+    T = config.T
 
-    chars = model_config['chars']  # Characteristics defined in config.py
+    chars = model_config['chars']  # Characteristics defined in config
 
     print(f"\nParameters:")
     print(f"  N (firms): {N}")
@@ -128,7 +140,7 @@ def main():
         print("\nWarning: 'bm' column not found, cannot count zero book-to-market")
 
     # Save panel and arrays to temporary directory
-    panel_filename = os.path.join(TEMP_DIR, f'{model_name}_{identifier}_panel.pkl')
+    panel_filename = os.path.join(config.TEMP_DIR, f'{model_name}_{identifier}_panel.pkl')
 
     print(f"\n{'-'*70}")
     print(f"Saving panel and arrays to {panel_filename}...")

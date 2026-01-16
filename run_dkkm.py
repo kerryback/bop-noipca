@@ -4,19 +4,20 @@ DKKM (Random Fourier Features) factor computation.
 Computes DKKM factors with specified number of features.
 
 Usage:
-    python run_dkkm.py [panel_id] [nfeatures]
+    python run_dkkm.py [panel_id] [nfeatures] [--config CONFIG_MODULE]
 
 Arguments:
     panel_id: Identifier for panel data (e.g., "bgn_0", "kp14_5")
               Reads from {panel_id}_panel.pkl
     nfeatures: Number of DKKM RFF features (e.g., 6, 36, 360)
+    --config: Optional config module name (default: 'config')
 
 Output:
     output/{panel_id}_dkkm_{nfeatures}.pkl
 
 Examples:
     python run_dkkm.py bgn_0 360
-    python run_dkkm.py kp14_5 1000
+    python run_dkkm.py kp14_5 1000 --config temp_config_xyz
 """
 
 import sys
@@ -29,10 +30,24 @@ import numpy as np
 import pandas as pd
 from datetime import datetime
 import time
+import importlib
+import pickle
+
+# Parse --config argument before other imports
+config_module_name = 'config'
+if '--config' in sys.argv:
+    config_idx = sys.argv.index('--config')
+    config_module_name = sys.argv[config_idx + 1]
+    # Remove --config and its value from sys.argv
+    sys.argv.pop(config_idx)
+    sys.argv.pop(config_idx)
+
+# Import config module dynamically
+config = importlib.import_module(config_module_name)
+gamma_grid = config.GAMMA_GRID
 
 # Import refactored modules
 try:
-    from config import DATA_DIR, GAMMA_GRID as gamma_grid
     from utils_factors import dkkm_functions as dkkm
     from utils_factors import portfolio_stats
     from utils_factors import factor_utils
@@ -110,8 +125,8 @@ def main():
         additional_args={'nfeatures': 'int'}
     )
 
-    # Load model configuration
-    CONFIG = factor_utils.load_model_config(model_name)
+    # Load model configuration from dynamically imported config module
+    CONFIG = config.get_model_config(model_name)
 
     # Get nfeatures from command line (required)
     if 'nfeatures' not in parsed_args:
@@ -126,8 +141,19 @@ def main():
     MODEL = CONFIG['model']
     CHARS = CONFIG['chars']
 
-    # Load panel data
-    panel, arrays_data = factor_utils.load_panel_data(panel_id, model_name)
+    # Load panel data using dynamic config
+    panel_path = os.path.join(config.TEMP_DIR, f"{panel_id}_panel.pkl")
+    if not os.path.exists(panel_path):
+        print(f"ERROR: Panel file not found at: {panel_path}")
+        print(f"\nPlease run generate_panel.py to create the panel file.")
+        print(f"\nUsage: python run_dkkm.py {panel_id} [nfeatures]")
+        sys.exit(1)
+
+    print(f"\nLoading panel from {panel_path}...")
+    with open(panel_path, 'rb') as f:
+        arrays_data = pickle.load(f)
+    panel = arrays_data['panel']
+    print(f"Loaded panel: shape={panel.shape}")
 
     # Prepare panel
     panel, start, end = factor_utils.prepare_panel(panel, CHARS)
@@ -224,7 +250,7 @@ def main():
     }
 
     # Save results
-    output_file = os.path.join(DATA_DIR, f"{panel_id}_dkkm_{nfeatures}.pkl")
+    output_file = os.path.join(config.DATA_DIR, f"{panel_id}_dkkm_{nfeatures}.pkl")
     factor_utils.save_factor_results(results, output_file, verbose=True)
 
     # Print runtime

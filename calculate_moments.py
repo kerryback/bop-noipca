@@ -6,16 +6,17 @@ second_moment_inv) once and saves them to a pickle file. This avoids redundant
 computation across run_fama.py and run_dkkm.py.
 
 Usage:
-    python calculate_moments.py [panel_id]
+    python calculate_moments.py [panel_id] [--config CONFIG_MODULE]
 
 Arguments:
     panel_id: Panel identifier (e.g., "bgn_0", "kp14_0", "gs21_5")
               Reads from {panel_id}_panel.pkl
               Output: {panel_id}_moments.pkl
+    --config: Optional config module name (default: 'config')
 
 Examples:
     python calculate_moments.py kp14_0
-    python calculate_moments.py bgn_5
+    python calculate_moments.py bgn_5 --config temp_config_xyz
 """
 
 import sys
@@ -26,11 +27,10 @@ from datetime import datetime
 import time
 import gc
 from joblib import Parallel, delayed
+import importlib
 
 # Add current directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-
-from config import TEMP_DIR
 
 
 def compute_month_moments(sdf_loop, month):
@@ -69,6 +69,18 @@ def main():
     """Main execution function."""
     start_time = time.time()
 
+    # Parse --config argument
+    config_module_name = 'config'
+    if '--config' in sys.argv:
+        config_idx = sys.argv.index('--config')
+        config_module_name = sys.argv[config_idx + 1]
+        # Remove --config and its value from sys.argv
+        sys.argv.pop(config_idx)
+        sys.argv.pop(config_idx)
+
+    # Import config module dynamically
+    config = importlib.import_module(config_module_name)
+
     # Parse command-line argument for panel identifier
     if len(sys.argv) > 1:
         panel_id = sys.argv[1]
@@ -76,7 +88,7 @@ def main():
         model_name = panel_id.split('_')[0].lower()
     else:
         print("ERROR: Panel ID required")
-        print("\nUsage: python calculate_moments.py [panel_id]")
+        print("\nUsage: python calculate_moments.py [panel_id] [--config CONFIG_MODULE]")
         print("  Example: python calculate_moments.py kp14_0")
         print("           python calculate_moments.py bgn_5")
         sys.exit(1)
@@ -97,7 +109,7 @@ def main():
     print("="*70)
 
     # Load panel data
-    panel_path = os.path.join(TEMP_DIR, f"{panel_id}_panel.pkl")
+    panel_path = os.path.join(config.TEMP_DIR, f"{panel_id}_panel.pkl")
 
     if not os.path.exists(panel_path):
         print(f"ERROR: Panel file not found at: {panel_path}")
@@ -114,16 +126,16 @@ def main():
 
     print(f"Loaded arrays: N={N}, T={T}")
 
-    # Import appropriate SDF compute module and get burnin from config
+    # Import appropriate SDF compute module and get burnin
     if model_name == 'bgn':
         from utils_bgn import sdf_compute_bgn as sdf_module
-        from config import BGN_BURNIN as burnin
+        burnin = config.BGN_BURNIN
     elif model_name == 'kp14':
         from utils_kp14 import sdf_compute_kp14 as sdf_module
-        from config import KP14_BURNIN as burnin
+        burnin = config.KP14_BURNIN
     elif model_name == 'gs21':
         from utils_gs21 import sdf_compute_gs21 as sdf_module
-        from config import GS21_BURNIN as burnin
+        burnin = config.GS21_BURNIN
     else:
         print(f"ERROR: Unknown model: {model_name}")
         sys.exit(1)
@@ -147,7 +159,7 @@ def main():
 
     print(f"Computing moments for months {start_month} to {end_month}")
     print(f"  Total: {n_months} months")
-    print(f"  Using parallel processing with n_jobs=10")
+    print(f"  Using parallel processing with n_jobs={config.N_JOBS}")
 
     # Process in chunks to avoid memory exhaustion
     # Chunking is the key optimization - prevents accumulating all 13+ GB of results
@@ -167,7 +179,7 @@ def main():
 
         # Use context manager to ensure workers are cleaned up after each chunk
         # This prevents memory accumulation across chunks
-        with Parallel(n_jobs=10, verbose=5) as parallel:
+        with Parallel(n_jobs=config.N_JOBS, verbose=5) as parallel:
             chunk_results = parallel(
                 delayed(compute_month_moments)(sdf_loop, month)
                 for month in chunk_months
@@ -177,7 +189,7 @@ def main():
         chunk_moments = {month: moments_dict for month, moments_dict in chunk_results}
 
         # Save chunk to temporary file
-        chunk_file = os.path.join(TEMP_DIR, f"{panel_id}_moments_chunk{chunk_idx}.pkl")
+        chunk_file = os.path.join(config.TEMP_DIR, f"{panel_id}_moments_chunk{chunk_idx}.pkl")
         with open(chunk_file, 'wb') as f:
             pickle.dump(chunk_moments, f)
         chunk_files.append(chunk_file)
@@ -213,7 +225,7 @@ def main():
     print(f"[OK] Consolidated {len(moments)} months")
 
     # Save moments to file
-    output_file = os.path.join(TEMP_DIR, f"{panel_id}_moments.pkl")
+    output_file = os.path.join(config.TEMP_DIR, f"{panel_id}_moments.pkl")
 
     print(f"\nSaving consolidated moments to {output_file}...")
     with open(output_file, 'wb') as f:

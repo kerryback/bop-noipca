@@ -6,16 +6,17 @@ Computes only:
 2. Fama-MacBeth factors (two-stage cross-sectional regression)
 
 Usage:
-    python run_fama.py [panel_id]
+    python run_fama.py [panel_id] [--config CONFIG_MODULE]
 
 Arguments:
     panel_id: Identifier for panel data (e.g., "bgn_0", "kp14_5")
               Reads from {panel_id}_panel.pkl
               Output: output/{panel_id}_fama.pkl
+    --config: Optional config module name (default: 'config')
 
 Examples:
     python run_fama.py bgn_0
-    python run_fama.py kp14_5
+    python run_fama.py kp14_5 --config temp_config_xyz
 """
 
 import sys
@@ -28,10 +29,23 @@ import numpy as np
 import pandas as pd
 from datetime import datetime
 import time
+import importlib
+import pickle
+
+# Parse --config argument before other imports
+config_module_name = 'config'
+if '--config' in sys.argv:
+    config_idx = sys.argv.index('--config')
+    config_module_name = sys.argv[config_idx + 1]
+    # Remove --config and its value from sys.argv
+    sys.argv.pop(config_idx)
+    sys.argv.pop(config_idx)
+
+# Import config module dynamically
+config = importlib.import_module(config_module_name)
 
 # Import refactored modules
 try:
-    from config import LOADING_KEYS, FACTOR_KEYS, DATA_DIR
     from utils_factors import fama_functions as fama
     from utils_factors import portfolio_stats
     from utils_factors import factor_utils
@@ -70,16 +84,27 @@ def main():
     # Parse command-line arguments
     panel_id, model_name, _ = factor_utils.parse_panel_arguments(script_name='run_fama')
 
-    # Load model configuration
-    CONFIG = factor_utils.load_model_config(model_name)
+    # Load model configuration from the dynamically imported config module
+    CONFIG = config.get_model_config(model_name)
 
     # Model selection
     MODEL = CONFIG['model']
     CHARS = CONFIG['chars']
     NAMES = CONFIG['factor_names']
 
-    # Load panel data
-    panel, arrays_data = factor_utils.load_panel_data(panel_id, model_name)
+    # Load panel data using dynamic config
+    panel_path = os.path.join(config.TEMP_DIR, f"{panel_id}_panel.pkl")
+    if not os.path.exists(panel_path):
+        print(f"ERROR: Panel file not found at: {panel_path}")
+        print(f"\nPlease run generate_panel.py to create the panel file.")
+        print(f"\nUsage: python run_fama.py {panel_id}")
+        sys.exit(1)
+
+    print(f"\nLoading panel from {panel_path}...")
+    with open(panel_path, 'rb') as f:
+        arrays_data = pickle.load(f)
+    panel = arrays_data['panel']
+    print(f"Loaded panel: shape={panel.shape}")
 
     # Prepare panel
     panel, start, end = factor_utils.prepare_panel(panel, CHARS)
@@ -204,7 +229,7 @@ def main():
     }
 
     # Save results
-    output_file = os.path.join(DATA_DIR, f"{panel_id}_fama.pkl")
+    output_file = os.path.join(config.DATA_DIR, f"{panel_id}_fama.pkl")
     factor_utils.save_factor_results(results, output_file, verbose=True)
 
     # Print runtime
