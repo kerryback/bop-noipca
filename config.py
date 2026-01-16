@@ -49,6 +49,27 @@ def set_temp_dir(temp_path):
     os.makedirs(TEMP_DIR, exist_ok=True)
     print(f"[CONFIG] TEMP_DIR set to: {TEMP_DIR}")
 
+
+def set_n_jobs(n_jobs):
+    """
+    Set the number of parallel jobs.
+
+    Args:
+        n_jobs: Number of parallel jobs
+    """
+    global N_JOBS
+    N_JOBS = n_jobs
+    print(f"[CONFIG] N_JOBS set to: {N_JOBS}")
+
+
+def set_jgsrc1_config():
+    """
+    Configure settings for running on jgsrc1 server.
+    Sets TEMP_DIR to /opt/scratch/keb7 and N_JOBS to 10.
+    """
+    set_temp_dir('/opt/scratch/keb7')
+    set_n_jobs(10)
+
 # =============================================================================
 # FILE MANAGEMENT FLAGS
 # =============================================================================

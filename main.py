@@ -8,20 +8,20 @@ Runs the complete workflow for a range of panel identifiers:
 4. Compute DKKM factors for multiple feature counts
 
 Usage:
-    python main.py [model] [start] [end] [--scratch]
+    python main.py [model] [start] [end] [--jgsrc1]
 
 Arguments:
     model: Model name (bgn, kp14, gs21) - case insensitive
     start: Starting index (optional, default: 0)
     end: Ending index (optional, default: 1)
-    --scratch: Use /opt/scratch/keb7 for temporary files (optional)
+    --jgsrc1: Configure for jgsrc1 server (TEMP_DIR=/opt/scratch/keb7, N_JOBS=10)
 
     Runs workflow for panel_id in range(start, end)
 
 Examples:
-    python main.py bgn                    # Runs for index 0, temp in outputs/
-    python main.py bgn 0 5                # Runs for indices 0-4, temp in outputs/
-    python main.py kp14 10 15 --scratch   # Runs for indices 10-14, temp in /opt/scratch/keb7
+    python main.py bgn                    # Runs for index 0 (default: N_JOBS=24)
+    python main.py bgn 0 5                # Runs for indices 0-4 (default: N_JOBS=24)
+    python main.py kp14 10 15 --jgsrc1    # Runs for indices 10-14 on jgsrc1 (N_JOBS=10)
 
 Output:
     All output is logged to: logs/{model}_{start}_{end}.log
@@ -197,22 +197,22 @@ def main():
     # Parse arguments
     if len(sys.argv) < 2:
         print("ERROR: Model name required")
-        print("\nUsage: python main.py [model] [start] [end] [--scratch]")
+        print("\nUsage: python main.py [model] [start] [end] [--jgsrc1]")
         print("  model: bgn, kp14, or gs21 (case insensitive)")
         print("  start: starting index (optional, default: 0)")
         print("  end: ending index (optional, default: 1)")
-        print("  --scratch: use /opt/scratch/keb7 for temporary files (optional)")
+        print("  --jgsrc1: configure for jgsrc1 (TEMP_DIR=/opt/scratch/keb7, N_JOBS=10)")
         print("\nExamples:")
         print("  python main.py bgn                   # Runs for index 0")
         print("  python main.py bgn 0 5               # Runs for indices 0-4")
-        print("  python main.py kp14 10 15 --scratch  # Runs for indices 10-14 with scratch")
+        print("  python main.py kp14 10 15 --jgsrc1  # Runs for indices 10-14 on jgsrc1")
         sys.exit(1)
 
-    # Check for --scratch flag
-    use_scratch = '--scratch' in sys.argv
-    if use_scratch:
-        sys.argv.remove('--scratch')
-        config.set_temp_dir('/opt/scratch/keb7')
+    # Check for --jgsrc1 flag
+    use_jgsrc1 = '--jgsrc1' in sys.argv
+    if use_jgsrc1:
+        sys.argv.remove('--jgsrc1')
+        config.set_jgsrc1_config()
 
     # Get model name (case insensitive)
     model = sys.argv[1].lower()
@@ -261,6 +261,7 @@ def main():
         print(f"  Index range: {start} to {end-1} (inclusive)")
         print(f"  Total runs: {end - start}")
         print(f"  DKKM features: {N_DKKM_FEATURES_LIST}")
+        print(f"  N_JOBS: {config.N_JOBS}")
         print(f"  Log file: {log_file}")
         print()
         print(f"Directories:")
