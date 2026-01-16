@@ -2,17 +2,21 @@
 
 This document explains how to configure S3 for automatic upload of workflow results from Koyeb containers.
 
+## ⚠️ IMPORTANT: S3 Configuration is REQUIRED
+
+**Koyeb bills for running instances regardless of CPU usage.** Containers are configured to automatically exit after workflows complete to stop billing. **Without S3 configured, your results will be lost when the container exits.**
+
 ## Overview
 
-When S3 is configured, the Koyeb workflow will automatically:
+When S3 is configured, the Koyeb workflow will:
 1. Run the workflow (e.g., KP14 for indices 0-9)
 2. Upload all logs and outputs to S3
-3. Exit cleanly (terminating the container)
+3. Exit cleanly (terminating the container and stopping billing)
 
 If S3 is NOT configured, the workflow will:
 1. Run the workflow
-2. Keep the container alive indefinitely
-3. Require manual download using `koyeb instances cp`
+2. ⚠️ **LOSE ALL RESULTS** (logs and outputs)
+3. Exit after 30 seconds to stop billing
 
 ## Prerequisites
 
