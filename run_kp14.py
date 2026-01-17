@@ -46,6 +46,10 @@ print()
 log_file = "/app/logs/kp14_0_10.log"
 runtime_log_file = "/app/logs/kp14_0_10_runtime.log"
 
+# Ensure logs directory exists
+os.makedirs("/app/logs", exist_ok=True)
+os.makedirs("/app/outputs", exist_ok=True)
+
 # Open runtime log file to capture all stdout/stderr
 runtime_log = open(runtime_log_file, 'w', buffering=1)
 
