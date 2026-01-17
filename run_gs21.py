@@ -1,9 +1,36 @@
-"""Wrapper to run gs21 workflow with periodic progress monitoring."""
+"""Wrapper to run gs21 workflow with incremental S3 uploads after each major step."""
 import sys
 import subprocess
 import time
 import os
 from datetime import datetime
+
+def upload_logs_to_s3(step_name):
+    """Upload current logs to S3 for progress monitoring."""
+    s3_configured = os.environ.get('S3_BUCKET') and os.environ.get('AWS_ACCESS_KEY_ID')
+
+    if not s3_configured:
+        return
+
+    print(f"\n{'='*70}")
+    print(f"[PROGRESS] Uploading logs to S3 after: {step_name}")
+    print(f"{'='*70}\n")
+
+    try:
+        # Run S3 upload script (logs only, outputs may be incomplete)
+        upload_result = subprocess.run(
+            [sys.executable, "upload_to_s3.py"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        )
+
+        if upload_result.returncode == 0:
+            print(f"✓ Progress uploaded to S3 (step: {step_name})\n")
+        else:
+            print(f"⚠ S3 upload warning (step: {step_name}): {upload_result.stderr}\n")
+    except Exception as e:
+        print(f"⚠ S3 upload error (step: {step_name}): {e}\n")
 
 print("="*70)
 print("Starting GS21 workflow: indices 0-9")
@@ -46,10 +73,20 @@ print()
 
 try:
     # Stream output in real-time and save to runtime log
+    # Monitor for step completion markers to trigger incremental uploads
     for line in iter(process.stdout.readline, ''):
         if line:
             print(line.rstrip())
             runtime_log.write(line)
+            runtime_log.flush()
+
+            # Detect major step completions and upload progress
+            if "Panel generation complete" in line or "Panel saved" in line:
+                upload_logs_to_s3("panel_generation")
+            elif "Moments calculation complete" in line or "Moments saved" in line:
+                upload_logs_to_s3("moments_calculation")
+            elif "DKKM complete" in line or "Fama-MacBeth complete" in line:
+                upload_logs_to_s3("dkkm_fama_macbeth")
 
     # Wait for process to complete
     return_code = process.wait()
@@ -105,9 +142,9 @@ finally:
     # Close runtime log file
     runtime_log.close()
 
-# Upload results to S3 (if configured) or warn about data loss
+# Upload final results to S3 (if configured) or warn about data loss
 print("\n" + "="*70)
-print("Workflow finished. Uploading results to S3...")
+print("Workflow finished. Uploading final results to S3...")
 print("="*70)
 print()
 
