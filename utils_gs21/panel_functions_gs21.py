@@ -242,12 +242,12 @@ def create_panel(N, T, arr_tuple):
             "op_cash_flow": np.reshape(book[:-1,:].T*op_cashflow[:-1,:].T, (N * T)),
             "book_lev": np.reshape(debt[:-1,:].T, (N * T)),
             "ret": (rets.T).reshape(N * T),
-            "A_1_taylor": (A_x_taylor[:-1,:].T).reshape(
-                N * T,
-            ),
-            "A_1_proj": (A_x_proj[:-1,:].T).reshape(
-                N * T,
-            )
+            # "A_1_taylor": (A_x_taylor[:-1,:].T).reshape(
+            #     N * T,
+            # ),
+            # "A_1_proj": (A_x_proj[:-1,:].T).reshape(
+            #     N * T,
+            # )
         }
     )
     

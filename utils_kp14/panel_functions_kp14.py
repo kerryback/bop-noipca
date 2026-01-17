@@ -225,18 +225,18 @@ def create_panel(N, T, arr_tuple):
             "ret": (ret.T).reshape(
                 N * T,
             ),
-            "A_1_taylor": (loadings_z_taylor[:-1,:].T).reshape(
-                N * T,
-            ),
-            "A_2_taylor": (loadings_x_taylor[:-1,:].T).reshape(
-                N * T,
-            ),
-            "A_1_proj": (loadings_z_proj[:-1,:].T).reshape(
-                N * T,
-            ),
-            "A_2_proj": (loadings_x_proj[:-1,:].T).reshape(
-                N * T,
-            )
+            # "A_1_taylor": (loadings_z_taylor[:-1,:].T).reshape(
+            #     N * T,
+            # ),
+            # "A_2_taylor": (loadings_x_taylor[:-1,:].T).reshape(
+            #     N * T,
+            # ),
+            # "A_1_proj": (loadings_z_proj[:-1,:].T).reshape(
+            #     N * T,
+            # ),
+            # "A_2_proj": (loadings_x_proj[:-1,:].T).reshape(
+            #     N * T,
+            # )
         }
     )
     df.set_index(["firmid", "month"], inplace=True)
