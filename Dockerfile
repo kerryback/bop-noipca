@@ -25,5 +25,11 @@ RUN mkdir -p logs outputs
 # Set Python to run in unbuffered mode for better logging
 ENV PYTHONUNBUFFERED=1
 
-# Run KP14 workflow for indices 0-9
-CMD ["python", "run_kp14.py"]
+# Make run_workflow.sh executable
+RUN chmod +x run_workflow.sh
+
+# Default workflow type (can be overridden via environment variable)
+ENV WORKFLOW_TYPE=kp14
+
+# Run workflow based on WORKFLOW_TYPE environment variable
+CMD ["./run_workflow.sh"]
