@@ -105,7 +105,7 @@ def main():
 
     # Get configuration from environment
     bucket_name = os.environ.get('S3_BUCKET')
-    aws_region = os.environ.get('AWS_REGION', 'us-east-1')
+    aws_region = os.environ.get('AWS_REGION', 'us-east-2')
     workflow_id = os.environ.get('WORKFLOW_ID', datetime.now().strftime('%Y%m%d_%H%M%S'))
 
     # Validate required environment variables
