@@ -76,8 +76,8 @@ def set_jgsrc1_config():
 # =============================================================================
 
 # Control whether to keep intermediate files after processing
-KEEP_PANEL = False   # If False, delete panel files after use
-KEEP_MOMENTS = False # If False, delete moments files after use
+KEEP_PANEL = True    # If False, delete panel files after use
+KEEP_MOMENTS = True  # If False, delete moments files after use
 KEEP_FACTOR_DETAILS = False  # If False, keep only {method}_stats in factor pickle files
 
 # =============================================================================
