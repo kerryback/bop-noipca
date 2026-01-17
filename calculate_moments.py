@@ -165,7 +165,7 @@ def main():
 
     # Process in chunks to avoid memory exhaustion
     # Chunking is the key optimization - prevents accumulating all 13+ GB of results
-    chunk_size = 100  # Process 100 months at a time
+    chunk_size = 50  # Process 50 months at a time (reduced from 100 for lower memory usage)
     n_chunks = (n_months + chunk_size - 1) // chunk_size  # Ceiling division
     chunk_files = []
 
