@@ -87,7 +87,7 @@ KEEP_FACTOR_DETAILS = False  # If False, keep only {method}_stats in factor pick
 # DKKM parameters
 INCLUDE_MKT = True  # Include market in DKKM
 NMAT = 1  # Number of weight matrices for DKKM
-N_DKKM_FEATURES_LIST = [6, 36, 360, 3600, 36000, 360000]  # List of feature counts for DKKM computation
+N_DKKM_FEATURES_LIST = [6, 36, 360, 3600, 36000]  # List of feature counts for DKKM computation (removed 360000 due to OOM on 5xlarge)
 DKKM_RANK_STANDARDIZE = True  # Rank-standardize characteristics in DKKM
 
 # Shrinkage parameters (Berk-Jameson regularization)
