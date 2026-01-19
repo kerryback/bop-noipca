@@ -44,8 +44,8 @@ def main():
     # Change to root directory so generate_panel.py runs from correct location
     os.chdir(str(Path(__file__).parent.parent.parent))
 
-    # Import and run
-    from generate_panel import main as generate_main
+    # Import and run from utils folder
+    from utils.generate_panel import main as generate_main
     generate_main()
 
 

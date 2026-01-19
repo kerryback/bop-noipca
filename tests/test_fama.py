@@ -247,7 +247,7 @@ def test_fama_factors(model):
 
     # Step 3: Generate moments file (required for portfolio statistics)
     print(f"\n[3/7] Generating moments file via calculate_moments.py...")
-    cmd = [sys.executable, str(parent_dir / 'calculate_moments.py'), panel_id]
+    cmd = [sys.executable, str(parent_dir / 'utils' / 'calculate_moments.py'), panel_id]
     result = subprocess.run(cmd, cwd=str(parent_dir), capture_output=True, text=True)
 
     if result.returncode != 0:
@@ -269,7 +269,7 @@ def test_fama_factors(model):
     # Step 5: Compute Fama factors with current code via run_fama.py
     print(f"\n[5/7] Computing Fama factors with current code via run_fama.py...")
     parent_dir = Path(__file__).parent.parent
-    cmd = [sys.executable, str(parent_dir / 'run_fama.py'), panel_id]
+    cmd = [sys.executable, str(parent_dir / 'utils' / 'run_fama.py'), panel_id]
     result = subprocess.run(cmd, cwd=str(parent_dir), capture_output=True, text=True)
 
     if result.returncode != 0:

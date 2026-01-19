@@ -173,14 +173,17 @@ def mve_data(
     """
     Compute mean-variance efficient portfolios for grid of penalties.
 
+    DKKM-specific scaling: Applies nfeatures * alpha scaling internally.
+    Combined with ridge_regression_grid's 360* scaling, gives final penalty: 360 * nfeatures * alpha
+
     Args:
         f: DataFrame of factor returns
         month: Current month
-        alpha_lst: Array of ridge penalties
+        alpha_lst: Array of BASE ridge penalties (unscaled from config)
         mkt_rf: Market return (if including market)
 
     Returns:
-        DataFrame of portfolio weights (columns = different alphas)
+        DataFrame of portfolio weights (columns = original alpha values)
     """
     # Get past 360 months
     X = f.loc[month - 360:month - 1].dropna().to_numpy()
@@ -195,40 +198,45 @@ def mve_data(
     y = np.ones(len(X))
     index_cols = list(f.columns) + (['mkt_rf'] if include_mkt else [])
 
-    # Number of features (for penalty scaling)
+    # Number of features (for DKKM-specific penalty scaling)
     nfeatures = X.shape[1]
+
+    # Save original alphas for column names
+    original_alphas = alpha_lst.copy()
 
     # Handle market (don't penalize last variable)
     if include_mkt:
         # For alpha=0, just solve directly
         beta_0 = ridge_regression_grid(X, y, np.array([0]))[:, 0]
         betas_list = [beta_0]
-        actual_alphas = [0]  # Track actual alpha values
+        result_alphas = [original_alphas[0]]  # Should be 0
 
         # For alpha > 0, augment design matrix to avoid penalizing market
-        for alpha in alpha_lst:
+        for i, alpha in enumerate(alpha_lst):
             if alpha > 0:
                 # Augment: don't penalize last column
-                # Note: alpha is already scaled by nfeatures in calling code (portfolio_stats.py)
+                # Scale by nfeatures to get effective penalty: 360 * nfeatures * alpha
                 X_aug = np.vstack([
                     X,
-                    np.sqrt(360 * alpha) * np.eye(X.shape[1])[:-1]
+                    np.sqrt(360 * nfeatures * alpha) * np.eye(X.shape[1])[:-1]
                 ])
                 y_aug = np.concatenate([y, np.zeros(X.shape[1] - 1)])
 
                 beta = ridge_regression_grid(X_aug, y_aug, np.array([0]))[:, 0]
                 betas_list.append(beta)
-                actual_alphas.append(alpha)
+                result_alphas.append(original_alphas[i])
 
         # Stack coefficients
         betas = np.column_stack(betas_list)
-        alpha_lst = np.array(actual_alphas)  # Use actual computed alphas as column names
+        result_alphas = np.array(result_alphas)
 
     else:
         # Standard ridge regression for all alphas at once
-        # Note: alpha_lst is already scaled by nfeatures in calling code (portfolio_stats.py)
-        # ridge_regression_grid applies 360* internally, so just pass alpha_lst
-        betas = ridge_regression_grid(X, y, alpha_lst)
+        # Scale by nfeatures here (ridge_regression_grid will apply 360* internally)
+        # Final penalty: 360 * nfeatures * alpha
+        scaled_alphas = nfeatures * alpha_lst
+        betas = ridge_regression_grid(X, y, scaled_alphas)
+        result_alphas = original_alphas
 
-    # Return as DataFrame
-    return pd.DataFrame(betas, index=index_cols, columns=alpha_lst)
+    # Return as DataFrame (columns = original unscaled alpha values)
+    return pd.DataFrame(betas, index=index_cols, columns=result_alphas)

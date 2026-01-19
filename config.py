@@ -91,7 +91,7 @@ N_DKKM_FEATURES_LIST = [6, 36, 360, 3600, 36000]  # List of feature counts for D
 DKKM_RANK_STANDARDIZE = True  # Rank-standardize characteristics in DKKM
 
 # Shrinkage parameters (Berk-Jameson regularization)
-ALPHA_LST_FAMA = [0]  # For Fama methods
+ALPHA_LST_FAMA = [0]  # For Fama methods - OLS ONLY, NO PENALIZATION
 ALPHA_LST = [0, 0.0001, 0.001, 0.01, 0.05, 0.1, 1]  # For DKKM (BGN/KP)
 ALPHA_LST_GS = [0, 0.0000001, 0.000001, 0.00001, 0.0001, 0.001, 0.01, 0.1, 1]  # For DKKM (GS21)
 

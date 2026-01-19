@@ -8,13 +8,14 @@ Runs the complete workflow for a range of panel identifiers:
 4. Compute DKKM factors for multiple feature counts
 
 Usage:
-    python main.py [model] [start] [end] [--jgsrc1]
+    python main.py [model] [start] [end] [--jgsrc1] [--koyeb]
 
 Arguments:
     model: Model name (bgn, kp14, gs21) - case insensitive
     start: Starting index (optional, default: 0)
     end: Ending index (optional, default: 1)
     --jgsrc1: Configure for jgsrc1 server (TEMP_DIR=/opt/scratch/keb7, N_JOBS=10)
+    --koyeb: Enable Koyeb deployment mode (uploads files to S3 as created)
 
     Runs workflow for panel_id in range(start, end)
 
@@ -22,6 +23,7 @@ Examples:
     python main.py bgn                    # Runs for index 0 (default: N_JOBS=24)
     python main.py bgn 0 5                # Runs for indices 0-4 (default: N_JOBS=24)
     python main.py kp14 10 15 --jgsrc1    # Runs for indices 10-14 on jgsrc1 (N_JOBS=10)
+    python main.py kp14 0 10 --koyeb      # Runs for indices 0-9 with S3 upload
 
 Output:
     All output is logged to: logs/{model}_{start}_{end}.log
@@ -38,6 +40,7 @@ import config
 from config import (DATA_DIR, N_DKKM_FEATURES_LIST,
                     KEEP_PANEL, KEEP_MOMENTS, KEEP_FACTOR_DETAILS,
                     N, T, BGN_BURNIN, KP14_BURNIN, GS21_BURNIN)
+from utils.upload_to_aws import upload_file, is_s3_configured
 
 
 def create_temp_config(model, start, end, use_jgsrc1=False):
@@ -300,7 +303,7 @@ def cleanup_factor_file(filepath, stats_key):
         print(f"[CLEANUP] Reduced {os.path.basename(filepath)}: {original_size:.2f} MB -> {new_size:.2f} MB")
 
 
-def run_workflow_for_index(model, panel_id, config_module=None, temp_config_obj=None, use_jgsrc1=False):
+def run_workflow_for_index(model, panel_id, config_module=None, temp_config_obj=None, use_jgsrc1=False, use_koyeb=False):
     """
     Run the complete workflow for a single panel index.
 
@@ -310,6 +313,7 @@ def run_workflow_for_index(model, panel_id, config_module=None, temp_config_obj=
         config_module: Optional config module name to pass to subprocesses
         temp_config_obj: Optional config module object for TEMP_DIR lookups
         use_jgsrc1: If True, set NUMBA_NUM_THREADS=1 to avoid nested parallelism
+        use_koyeb: If True, upload files to S3 as they are created
     """
     full_panel_id = f"{model}_{panel_id}"
 
@@ -332,30 +336,45 @@ def run_workflow_for_index(model, panel_id, config_module=None, temp_config_obj=
 
     # Step 1: Generate panel data
     timings['generate_panel'] = run_script(
-        "generate_panel.py",
+        "utils/generate_panel.py",
         [model, str(panel_id)],
         f"STEP 1: Generating {model.upper()} panel data (index={panel_id})",
         config_module=config_module,
         env=subprocess_env
     )
 
+    # Upload panel file to S3 if in Koyeb mode
+    if use_koyeb:
+        panel_file = os.path.join(cfg.TEMP_DIR, f"{full_panel_id}_panel.pkl")
+        upload_file(panel_file)
+
     # Step 2: Calculate SDF conditional moments
     timings['calculate_moments'] = run_script(
-        "calculate_moments.py",
+        "utils/calculate_moments.py",
         [full_panel_id],
         "STEP 2: Calculating SDF conditional moments (rp, cond_var, etc.)",
         config_module=config_module,
         env=subprocess_env
     )
 
+    # Upload moments file to S3 if in Koyeb mode
+    if use_koyeb:
+        moments_file = os.path.join(cfg.TEMP_DIR, f"{full_panel_id}_moments.pkl")
+        upload_file(moments_file)
+
     # Step 3: Compute Fama factors
     timings['run_fama'] = run_script(
-        "run_fama.py",
+        "utils/run_fama.py",
         [full_panel_id],
         "STEP 3: Computing Fama-French and Fama-MacBeth factors",
         config_module=config_module,
         env=subprocess_env
     )
+
+    # Upload Fama file to S3 if in Koyeb mode
+    if use_koyeb:
+        fama_file = os.path.join(DATA_DIR, f"{full_panel_id}_fama.pkl")
+        upload_file(fama_file)
 
     # Clean up Fama file if requested
     if not KEEP_FACTOR_DETAILS:
@@ -366,12 +385,17 @@ def run_workflow_for_index(model, panel_id, config_module=None, temp_config_obj=
     timings['run_dkkm'] = {}
     for i, nfeatures in enumerate(N_DKKM_FEATURES_LIST, 1):
         timings['run_dkkm'][nfeatures] = run_script(
-            "run_dkkm.py",
+            "utils/run_dkkm.py",
             [full_panel_id, str(nfeatures)],
             f"STEP 4.{i}: Computing DKKM factors (nfeatures={nfeatures})",
             config_module=config_module,
             env=subprocess_env
         )
+
+        # Upload DKKM file to S3 if in Koyeb mode
+        if use_koyeb:
+            dkkm_file = os.path.join(DATA_DIR, f"{full_panel_id}_dkkm_{nfeatures}.pkl")
+            upload_file(dkkm_file)
 
         # Clean up DKKM file if requested
         if not KEEP_FACTOR_DETAILS:
@@ -438,21 +462,27 @@ def main():
     # Parse arguments
     if len(sys.argv) < 2:
         print("ERROR: Model name required")
-        print("\nUsage: python main.py [model] [start] [end] [--jgsrc1]")
+        print("\nUsage: python main.py [model] [start] [end] [--jgsrc1] [--koyeb]")
         print("  model: bgn, kp14, or gs21 (case insensitive)")
         print("  start: starting index (optional, default: 0)")
         print("  end: ending index (optional, default: 1)")
         print("  --jgsrc1: configure for jgsrc1 (TEMP_DIR=/opt/scratch/keb7, N_JOBS=10)")
+        print("  --koyeb: enable Koyeb deployment mode (upload files to S3 as created)")
         print("\nExamples:")
         print("  python main.py bgn                   # Runs for index 0")
         print("  python main.py bgn 0 5               # Runs for indices 0-4")
         print("  python main.py kp14 10 15 --jgsrc1  # Runs for indices 10-14 on jgsrc1")
+        print("  python main.py kp14 0 10 --koyeb    # Runs for indices 0-9 with S3 upload")
         sys.exit(1)
 
-    # Check for --jgsrc1 flag
+    # Check for flags
     use_jgsrc1 = '--jgsrc1' in sys.argv
     if use_jgsrc1:
         sys.argv.remove('--jgsrc1')
+
+    use_koyeb = '--koyeb' in sys.argv
+    if use_koyeb:
+        sys.argv.remove('--koyeb')
 
     # Get model name (case insensitive)
     model = sys.argv[1].lower()
@@ -525,7 +555,7 @@ def main():
         failed_indices = []
         for i in range(start, end):
             try:
-                all_timings[i] = run_workflow_for_index(model, i, config_module=config_module, temp_config_obj=temp_config, use_jgsrc1=use_jgsrc1)
+                all_timings[i] = run_workflow_for_index(model, i, config_module=config_module, temp_config_obj=temp_config, use_jgsrc1=use_jgsrc1, use_koyeb=use_koyeb)
             except Exception as e:
                 failed_indices.append(i)
 

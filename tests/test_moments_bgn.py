@@ -189,7 +189,7 @@ def test_bgn_moment_calculations():
     # Calculate moments with current code via command line
     print("\n[2/6] Calculating moments with current code via calculate_moments.py...")
     parent_dir = Path(__file__).parent.parent
-    cmd = [sys.executable, str(parent_dir / 'calculate_moments.py'), f'bgn_{TEST_PANEL_ID}']
+    cmd = [sys.executable, str(parent_dir / 'utils' / 'calculate_moments.py'), f'bgn_{TEST_PANEL_ID}']
     result = subprocess.run(cmd, cwd=str(parent_dir), capture_output=True, text=True)
 
     if result.returncode != 0:

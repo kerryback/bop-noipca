@@ -236,10 +236,12 @@ def mve_data(
     Uses ridge regression: argmin ||y - X*beta||^2 + alpha*||beta||^2
     where y = 1 (target return of 1) and X = factor returns.
 
+    NOTE: For Fama methods, alpha should always be 0 (OLS, no penalization).
+
     Args:
         f: DataFrame of factor returns
         month: Current month
-        alpha: Ridge penalty (already scaled by caller if needed)
+        alpha: Ridge penalty - should be 0 for Fama (OLS only)
 
     Returns:
         Portfolio weights as Series
@@ -248,8 +250,8 @@ def mve_data(
     X = f.loc[month - 360:month - 1].dropna().to_numpy()
     y = np.ones(len(X))
 
-    # Caller is responsible for scaling alpha appropriately
-    # (DKKM scales by nfeatures, Fama doesn't)
+    # NOTE: alpha should be 0 for Fama methods (OLS only)
+    # With alpha=0, this reduces to OLS: (X'X)^{-1} X'y
     pi = ridge_regression_fast(X, y, alpha=360 * alpha)
 
     return pd.Series(pi, index=f.columns)
