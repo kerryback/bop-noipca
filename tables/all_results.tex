@@ -1,0 +1,110 @@
+\documentclass[11pt]{article}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{geometry}
+\geometry{margin=1in}
+\begin{document}
+
+\title{BOP-NoIPCA Factor Model Results}
+\author{}
+\date{\today}
+\maketitle
+\tableofcontents
+\clearpage
+
+
+\section{BGN Model Results}
+
+\subsection{Fama-French Results}
+
+\input{bgn_fama.tex}
+\clearpage
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.9\textwidth]{..\figures\bgn_fama_sharpe_boxplot.pdf}
+\caption{Fama Sharpe Ratio Distribution - BGN}
+\end{figure}
+\clearpage
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.9\textwidth]{..\figures\bgn_fama_hjd_boxplot.pdf}
+\caption{Fama HJ Distance Distribution - BGN}
+\end{figure}
+\clearpage
+
+\subsection{DKKM Results}
+
+\input{bgn_dkkm_sharpe.tex}
+\clearpage
+
+\input{bgn_dkkm_hjd.tex}
+\clearpage
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.9\textwidth]{..\figures\bgn_dkkm_sharpe_boxplot.pdf}
+\caption{DKKM Sharpe Ratio Distribution - BGN}
+\end{figure}
+\clearpage
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.9\textwidth]{..\figures\bgn_dkkm_hjd_boxplot.pdf}
+\caption{DKKM HJ Distance Distribution - BGN}
+\end{figure}
+\clearpage
+
+
+\section{KP14 Model Results}
+
+\subsection{Fama-French Results}
+
+\input{kp14_fama.tex}
+\clearpage
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.9\textwidth]{..\figures\kp14_fama_sharpe_boxplot.pdf}
+\caption{Fama Sharpe Ratio Distribution - KP14}
+\end{figure}
+\clearpage
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.9\textwidth]{..\figures\kp14_fama_hjd_boxplot.pdf}
+\caption{Fama HJ Distance Distribution - KP14}
+\end{figure}
+\clearpage
+
+\subsection{DKKM Results}
+
+\input{kp14_dkkm_sharpe.tex}
+\clearpage
+
+\input{kp14_dkkm_hjd.tex}
+\clearpage
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.9\textwidth]{..\figures\kp14_dkkm_sharpe_boxplot.pdf}
+\caption{DKKM Sharpe Ratio Distribution - KP14}
+\end{figure}
+\clearpage
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.9\textwidth]{..\figures\kp14_dkkm_hjd_boxplot.pdf}
+\caption{DKKM HJ Distance Distribution - KP14}
+\end{figure}
+\clearpage
+
+
+\section{GS21 Model Results}
+
+\subsection{Fama-French Results}
+
+\subsection{DKKM Results}
+
+\end{document}

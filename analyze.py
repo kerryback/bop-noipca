@@ -24,7 +24,7 @@ import pandas as pd
 import numpy as np
 import pickle
 from pathlib import Path
-from typing import Dict, List
+from typing import List
 import glob
 import matplotlib.pyplot as plt
 import matplotlib
@@ -48,31 +48,49 @@ FIGURES_DIR.mkdir(exist_ok=True)
 MODELS = ['bgn', 'kp14', 'gs21']
 
 
-def discover_panels(model: str) -> List[int]:
+def discover_panels(model: str) -> List[tuple]:
     """
-    Discover all available panel indices for a given model by scanning pickle files.
+    Discover all available (timestamp, panel_idx) pairs for a given model.
+
+    Supports two filename formats:
+    - Old format: {model}_{panel_idx}_fama.pkl
+    - New format: {model}_{timestamp}_{panel_idx}_fama.pkl
+
+    Each (timestamp, panel_idx) pair is treated as a unique panel.
 
     Args:
         model: Model name ('bgn', 'kp14', 'gs21')
 
     Returns:
-        Sorted list of panel indices
+        Sorted list of (timestamp, panel_idx) tuples
     """
     panels = set()
 
     # Scan for fama files (most likely to exist)
     pattern = os.path.join(DATA_DIR, f"{model}_*_fama.pkl")
     for filepath in glob.glob(pattern):
-        # Extract index from filename: model_index_fama.pkl
+        # Extract components from filename
         filename = Path(filepath).stem
         parts = filename.split('_')
-        if len(parts) >= 3 and parts[1].isdigit():
-            panels.add(int(parts[1]))
+
+        if len(parts) == 3:
+            # Old format: model_panelid_fama.pkl
+            if parts[1].isdigit():
+                timestamp = 'default'
+                panel_idx = int(parts[1])
+                panels.add((timestamp, panel_idx))
+        elif len(parts) == 5:
+            # New format: model_timestamp1_timestamp2_panelid_fama.pkl
+            # e.g., bgn_20260117_092453_0_fama.pkl
+            timestamp = f"{parts[1]}_{parts[2]}"
+            if parts[3].isdigit():
+                panel_idx = int(parts[3])
+                panels.add((timestamp, panel_idx))
 
     return sorted(list(panels))
 
 
-def load_and_process_fama(model: str, panel_indices: List[int]) -> pd.DataFrame:
+def load_and_process_fama(model: str, panels: List[tuple]) -> pd.DataFrame:
     """
     Load Fama results and compute sharpe/hjd following the notebook recipe.
 
@@ -80,13 +98,24 @@ def load_and_process_fama(model: str, panel_indices: List[int]) -> pd.DataFrame:
     - sharpe = mean / stdev
     - hjd_realized = (sdf_ret - xret)^2
 
+    Args:
+        model: Model name
+        panels: List of (timestamp, panel_idx) tuples
+
     Returns DataFrame with panel-level aggregates.
     """
     all_data = []
 
-    for panel_idx in panel_indices:
-        panel_id = f"{model}_{panel_idx}"
-        fama_file = os.path.join(DATA_DIR, f"{panel_id}_fama.pkl")
+    for panel_id, (timestamp, panel_idx) in enumerate(panels):
+        # Construct filename based on format
+        if timestamp == 'default':
+            # Old format: model_n_fama.pkl
+            filename = f"{model}_{panel_idx}_fama.pkl"
+        else:
+            # New format: model_timestamp_n_fama.pkl
+            filename = f"{model}_{timestamp}_{panel_idx}_fama.pkl"
+
+        fama_file = os.path.join(DATA_DIR, filename)
 
         if not os.path.exists(fama_file):
             continue
@@ -103,7 +132,8 @@ def load_and_process_fama(model: str, panel_indices: List[int]) -> pd.DataFrame:
         fama_stats = fama_stats.copy()
         fama_stats['sharpe'] = fama_stats['mean'] / fama_stats['stdev']
         fama_stats['hjd_sq'] = (fama_stats['sdf_ret'] - fama_stats['xret'])**2
-        fama_stats['panel'] = panel_idx
+        # Use sequential panel_id (0, 1, 2, ...) for aggregation
+        fama_stats['panel'] = panel_id
 
         all_data.append(fama_stats[['panel', 'month', 'method', 'alpha', 'sharpe', 'hjd_sq']])
 
@@ -113,30 +143,49 @@ def load_and_process_fama(model: str, panel_indices: List[int]) -> pd.DataFrame:
         return pd.DataFrame()
 
 
-def load_and_process_dkkm(model: str, panel_indices: List[int]) -> pd.DataFrame:
+def load_and_process_dkkm(model: str, panels: List[tuple]) -> pd.DataFrame:
     """
     Load DKKM results and compute sharpe/hjd following the notebook recipe.
+
+    Args:
+        model: Model name
+        panels: List of (timestamp, panel_idx) tuples
 
     Returns DataFrame with panel-level aggregates.
     """
     all_data = []
 
-    for panel_idx in panel_indices:
-        panel_id = f"{model}_{panel_idx}"
+    for panel_id, (timestamp, panel_idx) in enumerate(panels):
+        # Construct pattern based on format
+        if timestamp == 'default':
+            # Old format: model_n_dkkm_*.pkl
+            pattern = os.path.join(DATA_DIR, f"{model}_{panel_idx}_dkkm_*.pkl")
+        else:
+            # New format: model_timestamp_n_dkkm_*.pkl
+            pattern = os.path.join(DATA_DIR, f"{model}_{timestamp}_{panel_idx}_dkkm_*.pkl")
 
-        # Get all DKKM files for this panel
-        pattern = os.path.join(DATA_DIR, f"{panel_id}_dkkm_*.pkl")
         for filepath in glob.glob(pattern):
             # Extract nfeatures from filename
             filename = Path(filepath).stem
             parts = filename.split('_')
-            if len(parts) < 4:
-                continue
 
-            try:
-                nfeatures = int(parts[3])
-            except ValueError:
-                continue
+            # Parse based on format
+            if timestamp == 'default':
+                # Old format: model_n_dkkm_features.pkl (4 parts)
+                if len(parts) < 4:
+                    continue
+                try:
+                    nfeatures = int(parts[3])
+                except ValueError:
+                    continue
+            else:
+                # New format: model_timestamp1_timestamp2_n_dkkm_features.pkl (6 parts)
+                if len(parts) < 6:
+                    continue
+                try:
+                    nfeatures = int(parts[5])
+                except ValueError:
+                    continue
 
             # Load DKKM stats (now includes sdf_ret from run_dkkm.py)
             with open(filepath, 'rb') as f:
@@ -150,7 +199,8 @@ def load_and_process_dkkm(model: str, panel_indices: List[int]) -> pd.DataFrame:
             dkkm_stats = dkkm_stats.copy()
             dkkm_stats['sharpe'] = dkkm_stats['mean'] / dkkm_stats['stdev']
             dkkm_stats['hjd_sq'] = (dkkm_stats['sdf_ret'] - dkkm_stats['xret'])**2
-            dkkm_stats['panel'] = panel_idx
+            # Use sequential panel_id (0, 1, 2, ...) for aggregation
+            dkkm_stats['panel'] = panel_id
             dkkm_stats['num_factors'] = nfeatures
 
             all_data.append(dkkm_stats[['panel', 'month', 'alpha', 'num_factors', 'sharpe', 'hjd_sq']])
@@ -641,21 +691,21 @@ def main():
     for model in MODELS:
         print(f"Processing {model.upper()}...")
 
-        # Discover panels
-        panel_indices = discover_panels(model)
-        if not panel_indices:
+        # Discover all (timestamp, panel_idx) pairs
+        panels = discover_panels(model)
+        if not panels:
             print(f"  WARNING: No panels found for {model}")
             print()
             continue
 
-        print(f"  Found {len(panel_indices)} panels: {panel_indices}")
+        print(f"  Found {len(panels)} panels: {panels}")
 
         # Load and process data
         print("  Loading Fama data...")
-        fama_df = load_and_process_fama(model, panel_indices)
+        fama_df = load_and_process_fama(model, panels)
 
         print("  Loading DKKM data...")
-        dkkm_df = load_and_process_dkkm(model, panel_indices)
+        dkkm_df = load_and_process_dkkm(model, panels)
 
         # Create tables
         print("  Creating tables...")

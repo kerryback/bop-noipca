@@ -7,7 +7,9 @@ For each model (BGN, KP14, GS21):
   2. Moment calculation
   3. Fama factor computation
   4. DKKM factor computation (nfeatures=360)
-  5. IPCA factor computation (K=1)
+
+Note: IPCA/KPS tests have been excluded as the IPCA method is not included
+in the noipca workflow.
 
 Usage:
     cd tests
@@ -32,7 +34,6 @@ from config import N, T
 
 # Test configuration
 DKKM_NFEATURES = 36
-IPCA_K = 2
 
 
 def check_configuration():
@@ -184,12 +185,11 @@ def main():
     print("=" * 70)
     print("STARTING FULL TEST SUITE")
     print("=" * 70)
-    print("\nThis will run 5 tests for each of 3 models (15 tests total):")
+    print("\nThis will run 4 tests for each of 3 models (12 tests total):")
     print(f"  - Panel generation")
     print(f"  - Moment calculation")
     print(f"  - Fama factor computation")
     print(f"  - DKKM factor computation (nfeatures={DKKM_NFEATURES})")
-    print(f"  - IPCA factor computation (K={IPCA_K})")
     print()
 
     # Track results by model and test type
@@ -197,7 +197,7 @@ def main():
     results = defaultdict(dict)
 
     models = ['bgn', 'kp14', 'gs21']
-    test_types = ['panel', 'moments', 'fama', 'dkkm', 'ipca']
+    test_types = ['panel', 'moments', 'fama', 'dkkm']
 
     # Run tests for each model
     for model in models:
@@ -229,12 +229,6 @@ def main():
         success, error = run_test(test_file, [model, str(DKKM_NFEATURES)], description)
         results[model]['dkkm'] = (success, error)
 
-        # 5. IPCA factors
-        test_file = 'test_ipca.py'
-        description = f"{model.upper()} - IPCA Factors (K={IPCA_K})"
-        success, error = run_test(test_file, [model, str(IPCA_K)], description)
-        results[model]['ipca'] = (success, error)
-
     # Generate comprehensive summary
     print("\n" + "=" * 70)
     print("FINAL SUMMARY")
@@ -260,8 +254,8 @@ def main():
     # Summary table
     print("Results by model and test type:")
     print()
-    print(f"{'Model':<10} {'Panel':<8} {'Moments':<8} {'Fama':<8} {'DKKM':<8} {'IPCA':<8}")
-    print("-" * 58)
+    print(f"{'Model':<10} {'Panel':<8} {'Moments':<8} {'Fama':<8} {'DKKM':<8}")
+    print("-" * 50)
 
     for model in models:
         status_symbols = []
@@ -270,7 +264,7 @@ def main():
             status_symbols.append('PASS' if success else 'FAIL')
 
         print(f"{model.upper():<10} {status_symbols[0]:<8} {status_symbols[1]:<8} "
-              f"{status_symbols[2]:<8} {status_symbols[3]:<8} {status_symbols[4]:<8}")
+              f"{status_symbols[2]:<8} {status_symbols[3]:<8}")
 
     # Detailed failure information
     if total_failed > 0:

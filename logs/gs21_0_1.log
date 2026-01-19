@@ -1,0 +1,710 @@
+Started at Sun 18 Jan 2026, 09:45AM
+
+Configuration:
+  Model: gs21
+  Index range: 0 to 0 (inclusive)
+  Total runs: 1
+  DKKM features: [6, 36, 360, 3600, 36000]
+  N_JOBS: 24
+  Log file: C:\Users\kerry\repos\CodeNew\noipca\logs\gs21_0_1.log
+
+Directories:
+  DATA_DIR (permanent): C:\Users\kerry\repos\CodeNew\noipca\outputs
+  TEMP_DIR (temporary): C:\Users\kerry\repos\CodeNew\noipca\outputs
+    (using DATA_DIR for temporary files)
+
+[PARALLELISM] Set NUMBA_NUM_THREADS=1 (avoid nested parallelism with n_jobs=24)
+
+======================================================================
+RUNNING WORKFLOW FOR GS21_0
+======================================================================
+
+======================================================================
+STEP 1: Generating GS21 panel data (index=0)
+======================================================================
+
+======================================================================
+PANEL GENERATION
+======================================================================
+Model: GS21
+Identifier: 0
+Started at Sun 18 Jan 2026, 09:45AM
+======================================================================
+
+Parameters:
+  N (firms): 1000
+  T (periods): 720
+  Burnin: 300
+  Characteristics: ['size', 'bm', 'agr', 'roe', 'mom', 'mkt_lev']
+
+----------------------------------------------------------------------
+Generating panel for GS21 model...
+----------------------------------------------------------------------
+Creating arrays...
+Creating panel...
+
+Firm-months with bm=0 (after burnin): 0
+
+----------------------------------------------------------------------
+Saving panel and arrays to C:\Users\kerry\repos\CodeNew\noipca\outputs\gs21_0_panel.pkl...
+----------------------------------------------------------------------
+[OK] Saved successfully
+
+----------------------------------------------------------------------
+PANEL SUMMARY
+----------------------------------------------------------------------
+Model: GS21 (identifier=0)
+  Shape: (720000, 13)
+  Columns: ['month', 'firmid', 'mve', 'default', 'book_lev', 'xret', 'default_lag', 'roe', 'bm', 'mkt_lev', 'mom', 'agr', 'size']
+  Months: 300 to 1019
+  Unique months: 720
+  Firms: 1000
+  Characteristics: ['size', 'bm', 'agr', 'roe', 'mom', 'mkt_lev']
+  Mean excess return: 0.0131
+  Std excess return: 0.1719
+
+======================================================================
+GENERATION COMPLETE
+======================================================================
+Finished at Sun 18 Jan 2026, 09:51AM
+Total runtime: 381.8s (6.4 minutes)
+
+Output file: C:\Users\kerry\repos\CodeNew\noipca\outputs\gs21_0_panel.pkl
+
+To compute SDF moments:
+  python calculate_moments.py gs21_0
+
+To extract factors:
+  python run_fama.py gs21_0
+  python run_dkkm.py gs21_0 1000
+======================================================================
+
+======================================================================
+STEP 2: Calculating SDF conditional moments (rp, cond_var, etc.)
+======================================================================
+
+[Parallel(n_jobs=24)]: Using backend LokyBackend with 24 concurrent workers.
+[Parallel(n_jobs=24)]: Done  14 out of  50 | elapsed:    5.2s remaining:   13.6s
+[Parallel(n_jobs=24)]: Done  25 out of  50 | elapsed:    6.4s remaining:    6.4s
+[Parallel(n_jobs=24)]: Done  36 out of  50 | elapsed:    7.4s remaining:    2.8s
+[Parallel(n_jobs=24)]: Done  47 out of  50 | elapsed:    7.9s remaining:    0.4s
+[Parallel(n_jobs=24)]: Done  50 out of  50 | elapsed:    8.0s finished
+[Parallel(n_jobs=24)]: Using backend LokyBackend with 24 concurrent workers.
+[Parallel(n_jobs=24)]: Done  14 out of  50 | elapsed:    3.6s remaining:    9.4s
+[Parallel(n_jobs=24)]: Done  25 out of  50 | elapsed:    4.7s remaining:    4.7s
+[Parallel(n_jobs=24)]: Done  36 out of  50 | elapsed:    5.8s remaining:    2.2s
+[Parallel(n_jobs=24)]: Done  47 out of  50 | elapsed:    6.4s remaining:    0.3s
+[Parallel(n_jobs=24)]: Done  50 out of  50 | elapsed:    6.5s finished
+[Parallel(n_jobs=24)]: Using backend LokyBackend with 24 concurrent workers.
+[Parallel(n_jobs=24)]: Done  14 out of  50 | elapsed:    3.8s remaining:    9.9s
+[Parallel(n_jobs=24)]: Done  25 out of  50 | elapsed:    4.8s remaining:    4.8s
+[Parallel(n_jobs=24)]: Done  36 out of  50 | elapsed:    5.7s remaining:    2.1s
+[Parallel(n_jobs=24)]: Done  47 out of  50 | elapsed:    6.2s remaining:    0.3s
+[Parallel(n_jobs=24)]: Done  50 out of  50 | elapsed:    6.3s finished
+[Parallel(n_jobs=24)]: Using backend LokyBackend with 24 concurrent workers.
+[Parallel(n_jobs=24)]: Done  14 out of  50 | elapsed:    4.9s remaining:   12.8s
+[Parallel(n_jobs=24)]: Done  25 out of  50 | elapsed:    5.8s remaining:    5.8s
+[Parallel(n_jobs=24)]: Done  36 out of  50 | elapsed:    6.5s remaining:    2.5s
+[Parallel(n_jobs=24)]: Done  47 out of  50 | elapsed:    7.2s remaining:    0.4s
+[Parallel(n_jobs=24)]: Done  50 out of  50 | elapsed:    7.3s finished
+[Parallel(n_jobs=24)]: Using backend LokyBackend with 24 concurrent workers.
+[Parallel(n_jobs=24)]: Done  14 out of  50 | elapsed:    3.8s remaining:   10.0s
+[Parallel(n_jobs=24)]: Done  25 out of  50 | elapsed:    5.0s remaining:    5.0s
+[Parallel(n_jobs=24)]: Done  36 out of  50 | elapsed:    5.9s remaining:    2.3s
+[Parallel(n_jobs=24)]: Done  47 out of  50 | elapsed:    6.8s remaining:    0.3s
+[Parallel(n_jobs=24)]: Done  50 out of  50 | elapsed:    6.9s finished
+[Parallel(n_jobs=24)]: Using backend LokyBackend with 24 concurrent workers.
+[Parallel(n_jobs=24)]: Done  14 out of  50 | elapsed:    5.0s remaining:   12.9s
+[Parallel(n_jobs=24)]: Done  25 out of  50 | elapsed:    6.2s remaining:    6.2s
+[Parallel(n_jobs=24)]: Done  36 out of  50 | elapsed:    7.3s remaining:    2.8s
+[Parallel(n_jobs=24)]: Done  47 out of  50 | elapsed:    8.1s remaining:    0.4s
+[Parallel(n_jobs=24)]: Done  50 out of  50 | elapsed:    8.3s finished
+[Parallel(n_jobs=24)]: Using backend LokyBackend with 24 concurrent workers.
+[Parallel(n_jobs=24)]: Done  14 out of  50 | elapsed:    4.0s remaining:   10.3s
+[Parallel(n_jobs=24)]: Done  25 out of  50 | elapsed:    4.9s remaining:    4.9s
+[Parallel(n_jobs=24)]: Done  36 out of  50 | elapsed:    5.6s remaining:    2.1s
+[Parallel(n_jobs=24)]: Done  47 out of  50 | elapsed:    6.2s remaining:    0.3s
+[Parallel(n_jobs=24)]: Done  50 out of  50 | elapsed:    6.3s finished
+[Parallel(n_jobs=24)]: Using backend LokyBackend with 24 concurrent workers.
+[Parallel(n_jobs=24)]: Done   2 out of  10 | elapsed:    1.5s remaining:    6.3s
+[Parallel(n_jobs=24)]: Done   5 out of  10 | elapsed:    1.6s remaining:    1.6s
+[Parallel(n_jobs=24)]: Done   8 out of  10 | elapsed:    1.7s remaining:    0.4s
+[Parallel(n_jobs=24)]: Done  10 out of  10 | elapsed:    1.8s finished
+======================================================================
+SDF CONDITIONAL MOMENTS CALCULATION
+======================================================================
+Panel ID: gs21_0
+Model: gs21
+Started at Sun 18 Jan 2026, 09:51AM
+======================================================================
+
+Loading panel from C:\Users\kerry\repos\CodeNew\noipca\outputs\gs21_0_panel.pkl...
+Loaded arrays: N=1000, T=720
+
+----------------------------------------------------------------------
+Computing SDF conditional moments...
+----------------------------------------------------------------------
+Computing moments for months 660 to 1019
+  Total: 360 months
+  Using parallel processing with n_jobs=24
+  Processing in 8 chunks of 50 months each
+----------------------------------------------------------------------
+
+Chunk 1/8: months 660 to 709 (50 months)
+  [OK] Chunk 1 saved to gs21_0_moments_chunk0.pkl
+
+Chunk 2/8: months 710 to 759 (50 months)
+  [OK] Chunk 2 saved to gs21_0_moments_chunk1.pkl
+
+Chunk 3/8: months 760 to 809 (50 months)
+  [OK] Chunk 3 saved to gs21_0_moments_chunk2.pkl
+
+Chunk 4/8: months 810 to 859 (50 months)
+  [OK] Chunk 4 saved to gs21_0_moments_chunk3.pkl
+
+Chunk 5/8: months 860 to 909 (50 months)
+  [OK] Chunk 5 saved to gs21_0_moments_chunk4.pkl
+
+Chunk 6/8: months 910 to 959 (50 months)
+  [OK] Chunk 6 saved to gs21_0_moments_chunk5.pkl
+
+Chunk 7/8: months 960 to 1009 (50 months)
+  [OK] Chunk 7 saved to gs21_0_moments_chunk6.pkl
+
+Chunk 8/8: months 1010 to 1019 (10 months)
+  [OK] Chunk 8 saved to gs21_0_moments_chunk7.pkl
+
+----------------------------------------------------------------------
+[OK] All chunks computed in 61.6s (1.0 minutes)
+
+----------------------------------------------------------------------
+Consolidating chunks into final moments dictionary...
+----------------------------------------------------------------------
+  Loading chunk 1/8...
+  Loading chunk 2/8...
+  Loading chunk 3/8...
+  Loading chunk 4/8...
+  Loading chunk 5/8...
+  Loading chunk 6/8...
+  Loading chunk 7/8...
+  Loading chunk 8/8...
+  Sorting moments by month...
+[OK] Consolidated 360 months
+
+Saving consolidated moments to C:\Users\kerry\repos\CodeNew\noipca\outputs\gs21_0_moments.pkl...
+[OK] Moments saved successfully
+
+Cleaning up temporary chunk files...
+  Deleted gs21_0_moments_chunk0.pkl
+  Deleted gs21_0_moments_chunk1.pkl
+  Deleted gs21_0_moments_chunk2.pkl
+  Deleted gs21_0_moments_chunk3.pkl
+  Deleted gs21_0_moments_chunk4.pkl
+  Deleted gs21_0_moments_chunk5.pkl
+  Deleted gs21_0_moments_chunk6.pkl
+  Deleted gs21_0_moments_chunk7.pkl
+[OK] Cleanup complete
+
+======================================================================
+COMPUTATION COMPLETE
+======================================================================
+Finished at Sun 18 Jan 2026, 09:52AM
+Total runtime: 78.9s (1.3 minutes)
+
+Output file: C:\Users\kerry\repos\CodeNew\noipca\outputs\gs21_0_moments.pkl
+  Months: 660 to 1019 (360 total)
+  Each month contains:
+    - rp: (1000,) expected returns vector
+    - cond_var: (1000, 1000) conditional variance matrix
+    - second_moment: (1000, 1000) second moment matrix
+    - second_moment_inv: (1000, 1000) inverse second moment matrix
+    - sdf_ret: scalar SDF return
+    - max_sr: scalar maximum Sharpe ratio
+
+To load moments:
+  import pickle
+  with open('C:\Users\kerry\repos\CodeNew\noipca\outputs\gs21_0_moments.pkl', 'rb') as f:
+      data = pickle.load(f)
+  moments = data['moments']
+  # Access specific month:
+  rp = moments[660]['rp']
+  cond_var = moments[660]['cond_var']
+======================================================================
+
+======================================================================
+STEP 3: Computing Fama-French and Fama-MacBeth factors
+======================================================================
+
+
+Loading panel from C:\Users\kerry\repos\CodeNew\noipca\outputs\gs21_0_panel.pkl...
+Loaded panel: shape=(720000, 13)
+
+Panel after cleaning:
+  Start month: 300, End month: 1019
+  Total observations: 720000
+======================================================================
+FAMA-FRENCH & FAMA-MACBETH FACTORS
+======================================================================
+Model: gs21
+Panel ID: gs21_0
+Configuration: N=1000, T=720, n_jobs=24
+Methods: Fama-French, Fama-MacBeth
+Started at Sun 18 Jan 2026, 09:52AM
+======================================================================
+
+----------------------------------------------------------------------
+Computing Fama-French and Fama-MacBeth factors...
+[OK] Fama factors computed in 7.2s at 09:52AM
+
+----------------------------------------------------------------------
+Extracting model factors from array data...
+  [INFO] No model factors computed (only available for BGN model)
+
+----------------------------------------------------------------------
+Computing portfolio statistics...
+  Alpha grids: Fama=[0]
+  [OK] Fama stats: 720 observations
+[OK] Portfolio statistics computed in 18.2s
+
+Factor Returns Summary:
+  FF returns shape: (720, 7)
+  FM returns shape: (720, 7)
+
+[OK] Results saved to: C:\Users\kerry\repos\CodeNew\noipca\outputs\gs21_0_fama.pkl
+     Dictionary keys: ['ff_returns', 'fm_returns', 'fama_stats', 'model_premia_taylor', 'model_premia_proj', 'model_stats', 'panel_id', 'model', 'chars', 'start', 'end']
+
+     Contents:
+       ff_returns: DataFrame (720, 7)
+       fm_returns: DataFrame (720, 7)
+       fama_stats: DataFrame (720, 8)
+       model_premia_taylor: None
+       model_premia_proj: None
+       model_stats: None
+       panel_id: str = gs21_0
+       model: str = gs21
+       chars: list (length 6)
+       start: int64 = 300
+       end: int64 = 1019
+
+Total runtime: 25.9s (0.4 minutes)
+
+======================================================================
+COMPUTATION COMPLETE
+======================================================================
+Finished at Sun 18 Jan 2026, 09:53AM
+
+Usage examples:
+  import pickle
+  with open('C:\Users\kerry\repos\CodeNew\noipca\outputs\gs21_0_fama.pkl', 'rb') as f:
+      results = pickle.load(f)
+  ff = results['ff_returns']
+  fm = results['fm_returns']
+======================================================================
+[CLEANUP] Reduced gs21_0_fama.pkl: 0.13 MB -> 0.04 MB
+
+======================================================================
+STEP 4.1: Computing DKKM factors (nfeatures=6)
+======================================================================
+
+
+Loading panel from C:\Users\kerry\repos\CodeNew\noipca\outputs\gs21_0_panel.pkl...
+Loaded panel: shape=(720000, 13)
+
+Panel after cleaning:
+  Start month: 300, End month: 1019
+  Total observations: 720000
+======================================================================
+DKKM (RANDOM FOURIER FEATURES) FACTORS
+======================================================================
+Model: gs21
+Panel ID: gs21_0
+Configuration: N=1000, T=720, n_jobs=24
+Features: 6
+Started at Sun 18 Jan 2026, 09:53AM
+======================================================================
+
+----------------------------------------------------------------------
+Computing DKKM factors...
+  Features: 6, Matrices: 1
+  Rank standardize: True
+  Weight matrix 1/1
+[ACCELERATION] Using Numba-accelerated DKKM functions
+[OK] DKKM factors computed in 7.2s at 09:53AM
+
+----------------------------------------------------------------------
+Computing portfolio statistics...
+  Alpha grid: [0, 1e-07, 1e-06, 1e-05, 0.0001, 0.001, 0.01, 0.1, 1]
+  Include market: True
+  [OK] DKKM stats: 3240 observations
+[OK] Portfolio statistics computed in 20.0s
+
+Factor Returns Summary:
+  DKKM: 1 weight matrices
+  Features: 6
+  Rank standardize: True
+
+[OK] Results saved to: C:\Users\kerry\repos\CodeNew\noipca\outputs\gs21_0_dkkm_6.pkl
+     Dictionary keys: ['dkkm_factors', 'dkkm_stats', 'weights', 'nfeatures', 'nmat', 'rank_standardize', 'panel_id', 'model', 'chars', 'start', 'end']
+
+     Contents:
+       dkkm_factors: DataFrame (720, 6)
+       dkkm_stats: DataFrame (3240, 9)
+       weights: ndarray (3, 6)
+       nfeatures: int = 6
+       nmat: int = 1
+       rank_standardize: bool = True
+       panel_id: str = gs21_0
+       model: str = gs21
+       chars: list (length 6)
+       start: int64 = 300
+       end: int64 = 1019
+
+Total runtime: 27.6s (0.5 minutes)
+
+======================================================================
+COMPUTATION COMPLETE
+======================================================================
+Finished at Sun 18 Jan 2026, 09:53AM
+
+Usage examples:
+  import pickle
+  with open('C:\Users\kerry\repos\CodeNew\noipca\outputs\gs21_0_dkkm_6.pkl', 'rb') as f:
+      results = pickle.load(f)
+  dkkm = results['dkkm_factors']
+======================================================================
+[CLEANUP] Reduced gs21_0_dkkm_6.pkl: 0.22 MB -> 0.20 MB
+
+======================================================================
+STEP 4.2: Computing DKKM factors (nfeatures=36)
+======================================================================
+
+
+Loading panel from C:\Users\kerry\repos\CodeNew\noipca\outputs\gs21_0_panel.pkl...
+Loaded panel: shape=(720000, 13)
+
+Panel after cleaning:
+  Start month: 300, End month: 1019
+  Total observations: 720000
+======================================================================
+DKKM (RANDOM FOURIER FEATURES) FACTORS
+======================================================================
+Model: gs21
+Panel ID: gs21_0
+Configuration: N=1000, T=720, n_jobs=24
+Features: 36
+Started at Sun 18 Jan 2026, 09:53AM
+======================================================================
+
+----------------------------------------------------------------------
+Computing DKKM factors...
+  Features: 36, Matrices: 1
+  Rank standardize: True
+  Weight matrix 1/1
+[ACCELERATION] Using Numba-accelerated DKKM functions
+[OK] DKKM factors computed in 6.4s at 09:53AM
+
+----------------------------------------------------------------------
+Computing portfolio statistics...
+  Alpha grid: [0, 1e-07, 1e-06, 1e-05, 0.0001, 0.001, 0.01, 0.1, 1]
+  Include market: True
+  [OK] DKKM stats: 3240 observations
+[OK] Portfolio statistics computed in 25.5s
+
+Factor Returns Summary:
+  DKKM: 1 weight matrices
+  Features: 36
+  Rank standardize: True
+
+[OK] Results saved to: C:\Users\kerry\repos\CodeNew\noipca\outputs\gs21_0_dkkm_36.pkl
+     Dictionary keys: ['dkkm_factors', 'dkkm_stats', 'weights', 'nfeatures', 'nmat', 'rank_standardize', 'panel_id', 'model', 'chars', 'start', 'end']
+
+     Contents:
+       dkkm_factors: DataFrame (720, 36)
+       dkkm_stats: DataFrame (3240, 9)
+       weights: ndarray (18, 6)
+       nfeatures: int = 36
+       nmat: int = 1
+       rank_standardize: bool = True
+       panel_id: str = gs21_0
+       model: str = gs21
+       chars: list (length 6)
+       start: int64 = 300
+       end: int64 = 1019
+
+Total runtime: 32.3s (0.5 minutes)
+
+======================================================================
+COMPUTATION COMPLETE
+======================================================================
+Finished at Sun 18 Jan 2026, 09:54AM
+
+Usage examples:
+  import pickle
+  with open('C:\Users\kerry\repos\CodeNew\noipca\outputs\gs21_0_dkkm_36.pkl', 'rb') as f:
+      results = pickle.load(f)
+  dkkm = results['dkkm_factors']
+======================================================================
+[CLEANUP] Reduced gs21_0_dkkm_36.pkl: 0.31 MB -> 0.20 MB
+
+======================================================================
+STEP 4.3: Computing DKKM factors (nfeatures=360)
+======================================================================
+
+
+Loading panel from C:\Users\kerry\repos\CodeNew\noipca\outputs\gs21_0_panel.pkl...
+Loaded panel: shape=(720000, 13)
+
+Panel after cleaning:
+  Start month: 300, End month: 1019
+  Total observations: 720000
+======================================================================
+DKKM (RANDOM FOURIER FEATURES) FACTORS
+======================================================================
+Model: gs21
+Panel ID: gs21_0
+Configuration: N=1000, T=720, n_jobs=24
+Features: 360
+Started at Sun 18 Jan 2026, 09:54AM
+======================================================================
+
+----------------------------------------------------------------------
+Computing DKKM factors...
+  Features: 360, Matrices: 1
+  Rank standardize: True
+  Weight matrix 1/1
+[ACCELERATION] Using Numba-accelerated DKKM functions
+[OK] DKKM factors computed in 6.8s at 09:54AM
+
+----------------------------------------------------------------------
+Computing portfolio statistics...
+  Alpha grid: [0, 1e-07, 1e-06, 1e-05, 0.0001, 0.001, 0.01, 0.1, 1]
+  Include market: True
+  [OK] DKKM stats: 3240 observations
+[OK] Portfolio statistics computed in 198.7s
+
+Factor Returns Summary:
+  DKKM: 1 weight matrices
+  Features: 360
+  Rank standardize: True
+
+[OK] Results saved to: C:\Users\kerry\repos\CodeNew\noipca\outputs\gs21_0_dkkm_360.pkl
+     Dictionary keys: ['dkkm_factors', 'dkkm_stats', 'weights', 'nfeatures', 'nmat', 'rank_standardize', 'panel_id', 'model', 'chars', 'start', 'end']
+
+     Contents:
+       dkkm_factors: DataFrame (720, 360)
+       dkkm_stats: DataFrame (3240, 9)
+       weights: ndarray (180, 6)
+       nfeatures: int = 360
+       nmat: int = 1
+       rank_standardize: bool = True
+       panel_id: str = gs21_0
+       model: str = gs21
+       chars: list (length 6)
+       start: int64 = 300
+       end: int64 = 1019
+
+Total runtime: 205.9s (3.4 minutes)
+
+======================================================================
+COMPUTATION COMPLETE
+======================================================================
+Finished at Sun 18 Jan 2026, 09:57AM
+
+Usage examples:
+  import pickle
+  with open('C:\Users\kerry\repos\CodeNew\noipca\outputs\gs21_0_dkkm_360.pkl', 'rb') as f:
+      results = pickle.load(f)
+  dkkm = results['dkkm_factors']
+======================================================================
+[CLEANUP] Reduced gs21_0_dkkm_360.pkl: 1.21 MB -> 0.20 MB
+
+======================================================================
+STEP 4.4: Computing DKKM factors (nfeatures=3600)
+======================================================================
+
+
+Loading panel from C:\Users\kerry\repos\CodeNew\noipca\outputs\gs21_0_panel.pkl...
+Loaded panel: shape=(720000, 13)
+
+Panel after cleaning:
+  Start month: 300, End month: 1019
+  Total observations: 720000
+======================================================================
+DKKM (RANDOM FOURIER FEATURES) FACTORS
+======================================================================
+Model: gs21
+Panel ID: gs21_0
+Configuration: N=1000, T=720, n_jobs=24
+Features: 3600
+Started at Sun 18 Jan 2026, 09:57AM
+======================================================================
+
+----------------------------------------------------------------------
+Computing DKKM factors...
+  Features: 3600, Matrices: 1
+  Rank standardize: True
+  Weight matrix 1/1
+[ACCELERATION] Using Numba-accelerated DKKM functions
+[OK] DKKM factors computed in 37.2s at 09:58AM
+
+----------------------------------------------------------------------
+Computing portfolio statistics...
+  Alpha grid: [0, 1e-07, 1e-06, 1e-05, 0.0001, 0.001, 0.01, 0.1, 1]
+  Include market: True
+  [OK] DKKM stats: 3240 observations
+[OK] Portfolio statistics computed in 2056.3s
+
+Factor Returns Summary:
+  DKKM: 1 weight matrices
+  Features: 3600
+  Rank standardize: True
+
+[OK] Results saved to: C:\Users\kerry\repos\CodeNew\noipca\outputs\gs21_0_dkkm_3600.pkl
+     Dictionary keys: ['dkkm_factors', 'dkkm_stats', 'weights', 'nfeatures', 'nmat', 'rank_standardize', 'panel_id', 'model', 'chars', 'start', 'end']
+
+     Contents:
+       dkkm_factors: DataFrame (720, 3600)
+       dkkm_stats: DataFrame (3240, 9)
+       weights: ndarray (1800, 6)
+       nfeatures: int = 3600
+       nmat: int = 1
+       rank_standardize: bool = True
+       panel_id: str = gs21_0
+       model: str = gs21
+       chars: list (length 6)
+       start: int64 = 300
+       end: int64 = 1019
+
+Total runtime: 2093.9s (34.9 minutes)
+
+======================================================================
+COMPUTATION COMPLETE
+======================================================================
+Finished at Sun 18 Jan 2026, 10:32AM
+
+Usage examples:
+  import pickle
+  with open('C:\Users\kerry\repos\CodeNew\noipca\outputs\gs21_0_dkkm_3600.pkl', 'rb') as f:
+      results = pickle.load(f)
+  dkkm = results['dkkm_factors']
+======================================================================
+[CLEANUP] Reduced gs21_0_dkkm_3600.pkl: 10.20 MB -> 0.20 MB
+
+======================================================================
+STEP 4.5: Computing DKKM factors (nfeatures=36000)
+======================================================================
+
+
+Loading panel from C:\Users\kerry\repos\CodeNew\noipca\outputs\gs21_0_panel.pkl...
+Loaded panel: shape=(20000, 13)
+
+Panel after cleaning:
+  Start month: 300, End month: 699
+  Total observations: 20000
+======================================================================
+DKKM (RANDOM FOURIER FEATURES) FACTORS
+======================================================================
+Model: gs21
+Panel ID: gs21_0
+Configuration: N=50, T=400, n_jobs=24
+Features: 36000
+Started at Sun 18 Jan 2026, 10:32AM
+======================================================================
+
+----------------------------------------------------------------------
+Computing DKKM factors...
+  Features: 36000, Matrices: 1
+  Rank standardize: True
+  Weight matrix 1/1
+[ACCELERATION] Using Numba-accelerated DKKM functions
+[OK] DKKM factors computed in 10.6s at 10:32AM
+
+----------------------------------------------------------------------
+Computing portfolio statistics...
+  Alpha grid: [0, 1e-07, 1e-06, 1e-05, 0.0001, 0.001, 0.01, 0.1, 1]
+  Include market: True
+  [OK] DKKM stats: 360 observations
+[OK] Portfolio statistics computed in 97.4s
+
+Factor Returns Summary:
+  DKKM: 1 weight matrices
+  Features: 36000
+  Rank standardize: True
+
+[OK] Results saved to: C:\Users\kerry\repos\CodeNew\noipca\outputs\gs21_0_dkkm_36000.pkl
+     Dictionary keys: ['dkkm_factors', 'dkkm_stats', 'weights', 'nfeatures', 'nmat', 'rank_standardize', 'panel_id', 'model', 'chars', 'start', 'end']
+
+     Contents:
+       dkkm_factors: DataFrame (400, 36000)
+       dkkm_stats: DataFrame (360, 9)
+       weights: ndarray (18000, 6)
+       nfeatures: int = 36000
+       nmat: int = 1
+       rank_standardize: bool = True
+       panel_id: str = gs21_0
+       model: str = gs21
+       chars: list (length 6)
+       start: int64 = 300
+       end: int64 = 699
+
+Total runtime: 108.0s (1.8 minutes)
+
+======================================================================
+COMPUTATION COMPLETE
+======================================================================
+Finished at Sun 18 Jan 2026, 10:34AM
+
+Usage examples:
+  import pickle
+  with open('C:\Users\kerry\repos\CodeNew\noipca\outputs\gs21_0_dkkm_36000.pkl', 'rb') as f:
+      results = pickle.load(f)
+  dkkm = results['dkkm_factors']
+======================================================================
+[CLEANUP] Reduced gs21_0_dkkm_36000.pkl: 56.05 MB -> 0.02 MB
+
+[KEEP] Keeping moments file (KEEP_MOMENTS=True)
+[KEEP] Keeping panel file (KEEP_PANEL=True)
+
+======================================================================
+WORKFLOW COMPLETE FOR GS21_0
+======================================================================
+Execution Times:
+  1. Generate panel:        382.4s (  6.4min)
+  2. Calculate moments:      80.8s (  1.3min)
+  3. Fama factors:           28.2s (  0.5min)
+  4.1 DKKM (n=   6):         29.5s (  0.5min)
+  4.2 DKKM (n=  36):         34.2s (  0.6min)
+  4.3 DKKM (n= 360):        207.8s (  3.5min)
+  4.4 DKKM (n=3600):       2095.5s ( 34.9min)
+  4.5 DKKM (n=36000):        109.9s (  1.8min)
+  --------------------------------------------------
+  Total for gs21_0:   2968.3s ( 49.5min)
+======================================================================
+
+
+======================================================================
+ALL WORKFLOWS COMPLETE
+======================================================================
+Finished at Sun 18 Jan 2026, 10:34AM
+
+Summary for GS21 indices 0 to 0:
+  Total runs: 1
+  Successful: 1
+  Failed: 0
+  Total time:  2968.8s ( 49.5min)
+  Average time per successful run:  2968.8s ( 49.5min)
+
+Output files created in: C:\Users\kerry\repos\CodeNew\noipca\outputs
+
+  Index 0 (gs21_0):
+    - Panel data: gs21_0_panel.pkl (kept)
+    - SDF moments: gs21_0_moments.pkl (kept)
+    - Fama factors: gs21_0_fama.pkl
+    - DKKM (n=6): gs21_0_dkkm_6.pkl
+    - DKKM (n=36): gs21_0_dkkm_36.pkl
+    - DKKM (n=360): gs21_0_dkkm_360.pkl
+    - DKKM (n=3600): gs21_0_dkkm_3600.pkl
+    - DKKM (n=36000): gs21_0_dkkm_36000.pkl
+
+Log file: C:\Users\kerry\repos\CodeNew\noipca\logs\gs21_0_1.log
+======================================================================
