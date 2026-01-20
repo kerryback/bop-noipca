@@ -394,6 +394,10 @@ def run_workflow_for_index(model, panel_id, config_module=None, temp_config_obj=
         dkkm_file = os.path.join(DATA_DIR, f"{full_panel_id}_dkkm_{nfeatures}.pkl")
         upload_file(dkkm_file)
 
+        # Upload DKKM weight matrix to S3 (if S3 configured)
+        weight_file = os.path.join(DATA_DIR, f"{full_panel_id}_dkkm_{nfeatures}_W.pkl")
+        upload_file(weight_file)
+
         # Clean up DKKM file if requested
         if not KEEP_FACTOR_DETAILS:
             dkkm_file = os.path.join(DATA_DIR, f"{full_panel_id}_dkkm_{nfeatures}.pkl")
