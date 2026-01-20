@@ -8,22 +8,22 @@ Runs the complete workflow for a range of panel identifiers:
 4. Compute DKKM factors for multiple feature counts
 
 Usage:
-    python main.py [model] [start] [end] [--jgsrc1] [--koyeb]
+    python main.py [model] [start] [end] [--koyeb]
 
 Arguments:
     model: Model name (bgn, kp14, gs21) - case insensitive
     start: Starting index (optional, default: 0)
     end: Ending index (optional, default: 1)
-    --jgsrc1: Configure for jgsrc1 server (TEMP_DIR=/opt/scratch/keb7, N_JOBS=10)
-    --koyeb: Enable Koyeb deployment mode (uploads files to S3 as created)
+    --koyeb: Configure for Koyeb deployment (N_JOBS=24, TEMP_DIR=DATA_DIR)
+             Default: jgsrc1 settings (N_JOBS=10, TEMP_DIR=/opt/scratch/keb7)
 
     Runs workflow for panel_id in range(start, end)
+    S3 uploads happen automatically if S3 environment variables are configured
 
 Examples:
-    python main.py bgn                    # Runs for index 0 (default: N_JOBS=24)
-    python main.py bgn 0 5                # Runs for indices 0-4 (default: N_JOBS=24)
-    python main.py kp14 10 15 --jgsrc1    # Runs for indices 10-14 on jgsrc1 (N_JOBS=10)
-    python main.py kp14 0 10 --koyeb      # Runs for indices 0-9 with S3 upload
+    python main.py bgn                    # Runs for index 0 (jgsrc1: N_JOBS=10)
+    python main.py bgn 0 5                # Runs for indices 0-4 (jgsrc1: N_JOBS=10)
+    python main.py kp14 0 10 --koyeb      # Runs for indices 0-9 (Koyeb: N_JOBS=24)
 
 Output:
     All output is logged to: logs/{model}_{start}_{end}.log
@@ -43,7 +43,7 @@ from config import (DATA_DIR, N_DKKM_FEATURES_LIST,
 from utils.upload_to_aws import upload_file, is_s3_configured
 
 
-def create_temp_config(model, start, end, use_jgsrc1=False):
+def create_temp_config(model, start, end, use_koyeb=False):
     """
     Create a temporary config file with optional overrides.
 
@@ -51,7 +51,7 @@ def create_temp_config(model, start, end, use_jgsrc1=False):
         model: Model name (bgn, kp14, gs21)
         start: Starting index
         end: Ending index
-        use_jgsrc1: If True, set N_JOBS=10 and TEMP_DIR=/opt/scratch/keb7
+        use_koyeb: If True, set N_JOBS=24 for Koyeb deployment (default: N_JOBS=10 for jgsrc1)
 
     Returns:
         Tuple of (config_module_name, config_file_path)
@@ -61,9 +61,9 @@ def create_temp_config(model, start, end, use_jgsrc1=False):
     config_module_name = f"temp_config_{config_id}"
     config_file_path = os.path.join(os.path.dirname(__file__), f"{config_module_name}.py")
 
-    # Read current config values
-    n_jobs = 10 if use_jgsrc1 else config.N_JOBS
-    temp_dir = '/opt/scratch/keb7' if use_jgsrc1 else config.DATA_DIR
+    # Default to jgsrc1 settings, override for Koyeb
+    n_jobs = 24 if use_koyeb else 10
+    temp_dir = config.DATA_DIR if use_koyeb else '/opt/scratch/keb7'
 
     # Create temp config file content
     config_content = f'''"""
@@ -82,7 +82,7 @@ T = {config.T}
 BGN_BURNIN = {config.BGN_BURNIN}
 KP14_BURNIN = {config.KP14_BURNIN}
 GS21_BURNIN = {config.GS21_BURNIN}
-N_JOBS = {n_jobs}  # {'Override for jgsrc1' if use_jgsrc1 else 'Default'}
+N_JOBS = {n_jobs}  # Koyeb: 24, jgsrc1: 10
 NUMBA_NUM_THREADS = {config.NUMBA_NUM_THREADS}  # Numba threads per job
 
 # =============================================================================
@@ -90,7 +90,7 @@ NUMBA_NUM_THREADS = {config.NUMBA_NUM_THREADS}  # Numba threads per job
 # =============================================================================
 _CONFIG_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(_CONFIG_DIR, 'outputs')
-TEMP_DIR = {repr(temp_dir)}  # {'Override for jgsrc1' if use_jgsrc1 else 'Default'}
+TEMP_DIR = {repr(temp_dir)}  # Koyeb: DATA_DIR, jgsrc1: /opt/scratch/keb7
 
 os.makedirs(DATA_DIR, exist_ok=True)
 os.makedirs(TEMP_DIR, exist_ok=True)
@@ -303,7 +303,7 @@ def cleanup_factor_file(filepath, stats_key):
         print(f"[CLEANUP] Reduced {os.path.basename(filepath)}: {original_size:.2f} MB -> {new_size:.2f} MB")
 
 
-def run_workflow_for_index(model, panel_id, config_module=None, temp_config_obj=None, use_jgsrc1=False, use_koyeb=False):
+def run_workflow_for_index(model, panel_id, config_module=None, temp_config_obj=None):
     """
     Run the complete workflow for a single panel index.
 
@@ -312,8 +312,9 @@ def run_workflow_for_index(model, panel_id, config_module=None, temp_config_obj=
         panel_id: Panel index
         config_module: Optional config module name to pass to subprocesses
         temp_config_obj: Optional config module object for TEMP_DIR lookups
-        use_jgsrc1: If True, set NUMBA_NUM_THREADS=1 to avoid nested parallelism
-        use_koyeb: If True, upload files to S3 as they are created
+
+    Note:
+        S3 uploads happen automatically if S3 environment variables are configured.
     """
     full_panel_id = f"{model}_{panel_id}"
 
@@ -343,10 +344,9 @@ def run_workflow_for_index(model, panel_id, config_module=None, temp_config_obj=
         env=subprocess_env
     )
 
-    # Upload panel file to S3 if in Koyeb mode
-    if use_koyeb:
-        panel_file = os.path.join(cfg.TEMP_DIR, f"{full_panel_id}_panel.pkl")
-        upload_file(panel_file)
+    # Upload panel file to S3 (if S3 configured)
+    panel_file = os.path.join(cfg.TEMP_DIR, f"{full_panel_id}_panel.pkl")
+    upload_file(panel_file)
 
     # Step 2: Calculate SDF conditional moments
     timings['calculate_moments'] = run_script(
@@ -357,10 +357,9 @@ def run_workflow_for_index(model, panel_id, config_module=None, temp_config_obj=
         env=subprocess_env
     )
 
-    # Upload moments file to S3 if in Koyeb mode
-    if use_koyeb:
-        moments_file = os.path.join(cfg.TEMP_DIR, f"{full_panel_id}_moments.pkl")
-        upload_file(moments_file)
+    # Upload moments file to S3 (if S3 configured)
+    moments_file = os.path.join(cfg.TEMP_DIR, f"{full_panel_id}_moments.pkl")
+    upload_file(moments_file)
 
     # Step 3: Compute Fama factors
     timings['run_fama'] = run_script(
@@ -371,10 +370,9 @@ def run_workflow_for_index(model, panel_id, config_module=None, temp_config_obj=
         env=subprocess_env
     )
 
-    # Upload Fama file to S3 if in Koyeb mode
-    if use_koyeb:
-        fama_file = os.path.join(DATA_DIR, f"{full_panel_id}_fama.pkl")
-        upload_file(fama_file)
+    # Upload Fama file to S3 (if S3 configured)
+    fama_file = os.path.join(DATA_DIR, f"{full_panel_id}_fama.pkl")
+    upload_file(fama_file)
 
     # Clean up Fama file if requested
     if not KEEP_FACTOR_DETAILS:
@@ -392,10 +390,9 @@ def run_workflow_for_index(model, panel_id, config_module=None, temp_config_obj=
             env=subprocess_env
         )
 
-        # Upload DKKM file to S3 if in Koyeb mode
-        if use_koyeb:
-            dkkm_file = os.path.join(DATA_DIR, f"{full_panel_id}_dkkm_{nfeatures}.pkl")
-            upload_file(dkkm_file)
+        # Upload DKKM file to S3 (if S3 configured)
+        dkkm_file = os.path.join(DATA_DIR, f"{full_panel_id}_dkkm_{nfeatures}.pkl")
+        upload_file(dkkm_file)
 
         # Clean up DKKM file if requested
         if not KEEP_FACTOR_DETAILS:
@@ -462,24 +459,20 @@ def main():
     # Parse arguments
     if len(sys.argv) < 2:
         print("ERROR: Model name required")
-        print("\nUsage: python main.py [model] [start] [end] [--jgsrc1] [--koyeb]")
+        print("\nUsage: python main.py [model] [start] [end] [--koyeb]")
         print("  model: bgn, kp14, or gs21 (case insensitive)")
         print("  start: starting index (optional, default: 0)")
         print("  end: ending index (optional, default: 1)")
-        print("  --jgsrc1: configure for jgsrc1 (TEMP_DIR=/opt/scratch/keb7, N_JOBS=10)")
-        print("  --koyeb: enable Koyeb deployment mode (upload files to S3 as created)")
+        print("  --koyeb: configure for Koyeb (N_JOBS=24, TEMP_DIR=DATA_DIR)")
+        print("           Default: jgsrc1 (N_JOBS=10, TEMP_DIR=/opt/scratch/keb7)")
+        print("\nNote: S3 uploads happen automatically if S3 environment variables are configured")
         print("\nExamples:")
-        print("  python main.py bgn                   # Runs for index 0")
-        print("  python main.py bgn 0 5               # Runs for indices 0-4")
-        print("  python main.py kp14 10 15 --jgsrc1  # Runs for indices 10-14 on jgsrc1")
-        print("  python main.py kp14 0 10 --koyeb    # Runs for indices 0-9 with S3 upload")
+        print("  python main.py bgn                   # Runs for index 0 (jgsrc1)")
+        print("  python main.py bgn 0 5               # Runs for indices 0-4 (jgsrc1)")
+        print("  python main.py kp14 0 10 --koyeb    # Runs for indices 0-9 (Koyeb)")
         sys.exit(1)
 
-    # Check for flags
-    use_jgsrc1 = '--jgsrc1' in sys.argv
-    if use_jgsrc1:
-        sys.argv.remove('--jgsrc1')
-
+    # Check for --koyeb flag
     use_koyeb = '--koyeb' in sys.argv
     if use_koyeb:
         sys.argv.remove('--koyeb')
@@ -503,7 +496,7 @@ def main():
         sys.exit(1)
 
     # Create temporary config file
-    config_module, config_file_path = create_temp_config(model, start, end, use_jgsrc1)
+    config_module, config_file_path = create_temp_config(model, start, end, use_koyeb)
 
     # Import the temp config module for use in logging
     import importlib
@@ -555,7 +548,7 @@ def main():
         failed_indices = []
         for i in range(start, end):
             try:
-                all_timings[i] = run_workflow_for_index(model, i, config_module=config_module, temp_config_obj=temp_config, use_jgsrc1=use_jgsrc1, use_koyeb=use_koyeb)
+                all_timings[i] = run_workflow_for_index(model, i, config_module=config_module, temp_config_obj=temp_config)
             except Exception as e:
                 failed_indices.append(i)
 

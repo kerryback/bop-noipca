@@ -199,7 +199,8 @@ def mve_data(
     index_cols = list(f.columns) + (['mkt_rf'] if include_mkt else [])
 
     # Number of features (for DKKM-specific penalty scaling)
-    nfeatures = X.shape[1]
+    # Exclude market column from feature count if present
+    nfeatures = X.shape[1] - 1 if include_mkt else X.shape[1]
 
     # Save original alphas for column names
     original_alphas = alpha_lst.copy()
