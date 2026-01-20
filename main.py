@@ -32,21 +32,32 @@ Koyeb Deployment (self-contained workflow):
     3. Uploads results to S3 (automatic)
     4. Deletes the service to stop billing (automatic)
 
-    Method 1: Using deploy_koyeb.sh helper script (RECOMMENDED)
+    Method 1: Using helper script (RECOMMENDED)
 
-        # Set required environment variables
-        export KOYEB_API_TOKEN=your_token
-        export AWS_ACCESS_KEY_ID=AKIA...
-        export AWS_SECRET_ACCESS_KEY=...
+        Linux/macOS/Git Bash:
+            # Set required environment variables
+            export KOYEB_API_TOKEN=your_token
+            export AWS_ACCESS_KEY_ID=AKIA...
+            export AWS_SECRET_ACCESS_KEY=...
 
-        # Deploy (one command!)
-        ./deploy_koyeb.sh kp14 0 10
+            # Deploy (one command!)
+            ./deploy_koyeb.sh kp14 0 10
 
-        # Monitor logs
-        koyeb services logs kp14_0_10 --app noipca-app --follow
+        Windows PowerShell:
+            # Set required environment variables
+            $env:KOYEB_API_TOKEN = "your_token"
+            $env:AWS_ACCESS_KEY_ID = "AKIA..."
+            $env:AWS_SECRET_ACCESS_KEY = "..."
 
-        # Download results when complete
-        aws s3 sync s3://bop-noipca/koyeb-results/ ./results/
+            # Deploy (one command!)
+            .\deploy_koyeb.ps1 kp14 0 10
+
+        Monitor and download (all platforms):
+            # Monitor logs
+            koyeb services logs kp14_0_10 --app noipca-app --follow
+
+            # Download results when complete
+            aws s3 sync s3://bop-noipca/koyeb-results/ ./results/
 
     Method 2: Manual Koyeb CLI commands
 
