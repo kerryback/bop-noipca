@@ -204,7 +204,7 @@ def load_and_process_dkkm(model: str, panels: List[tuple]) -> pd.DataFrame:
             dkkm_stats['num_factors'] = nfeatures
 
             all_data.append(dkkm_stats[['panel', 'month', 'alpha', 'num_factors', 'sharpe', 'hjd_sq']])
-
+        print(dkkm_stats.groupby('panel').sharpe.mean())
     if all_data:
         return pd.concat(all_data, ignore_index=True)
     else:

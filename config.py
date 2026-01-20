@@ -10,11 +10,11 @@ import os
 # PANEL DIMENSIONS - CONFIGURE THESE FIRST
 # =============================================================================
 
-N = 50 # Number of firms (set to 50 for testing)
-T = 400   # Number of time periods (excluding burnin) (set to 400 for testing)
-BGN_BURNIN = 300  # BGN burnin period
-KP14_BURNIN = 300  # KP14 burnin period
-GS21_BURNIN = 300  # GS21 burnin period
+N = 1000 # Number of firms (set to 50 for testing)
+T = 721   # Number of time periods (excluding burnin) (set to 400 for testing)
+BGN_BURNIN = 200  # BGN burnin period
+KP14_BURNIN = 200  # KP14 burnin period
+GS21_BURNIN = 200  # GS21 burnin period
 N_JOBS = 24  # Number of parallel jobs
 NUMBA_NUM_THREADS = 1  # Numba threads per job (1 = no nested parallelism)
 

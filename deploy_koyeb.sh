@@ -146,6 +146,14 @@ AWS_REGION=${AWS_REGION:-us-east-2}
 KOYEB_APP_NAME=${KOYEB_APP_NAME:-noipca-app}
 KOYEB_REGION=${KOYEB_REGION:-was}
 
+# Auto-detect git branch (default: current branch)
+if [ -z "$GIT_BRANCH" ]; then
+    GIT_BRANCH=$(git branch --show-current)
+    if [ -z "$GIT_BRANCH" ]; then
+        GIT_BRANCH="main"  # Fallback to main if detection fails
+    fi
+fi
+
 # Generate service name (use hyphens for Koyeb naming compliance)
 SERVICE_NAME="${MODEL}-${START}-${END}"
 
@@ -160,6 +168,7 @@ echo "  App name:      $KOYEB_APP_NAME"
 echo "  Instance type: $INSTANCE_TYPE"
 echo "  Region:        $KOYEB_REGION"
 echo "  Git repo:      $GIT_REPO"
+echo "  Git branch:    $GIT_BRANCH"
 echo "  S3 bucket:     $S3_BUCKET"
 echo "  AWS region:    $AWS_REGION"
 echo "=========================================="
@@ -187,7 +196,7 @@ echo "Creating Koyeb service..."
 koyeb services create "$SERVICE_NAME" \
   --app "$KOYEB_APP_NAME" \
   --git "github.com/$GIT_REPO" \
-  --git-branch main \
+  --git-branch "$GIT_BRANCH" \
   --git-run-command "python main.py $MODEL $START $END --koyeb" \
   --instance-type "$INSTANCE_TYPE" \
   --regions "$KOYEB_REGION" \

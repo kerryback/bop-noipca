@@ -98,10 +98,10 @@ AWS_REGION=us-east-2
 
 ```bash
 # Watch service status
-koyeb services get kp14_0_10 --app noipca-app
+koyeb services get kp14-0-10 --app noipca-app
 
 # View logs in real-time
-koyeb services logs kp14_0_10 --app noipca-app --follow
+koyeb services logs kp14-0-10 --app noipca-app --follow
 ```
 
 ### Step 4: Download Results
@@ -191,7 +191,7 @@ if use_koyeb:
 
 **Required environment variables** (set automatically by Koyeb):
 - `KOYEB_APP_NAME` - App name (e.g., "noipca-app")
-- `KOYEB_SERVICE_NAME` - Service name (e.g., "kp14_0_10")
+- `KOYEB_SERVICE_NAME` - Service name (e.g., "kp14-0-10")
 - `KOYEB_API_TOKEN` - Your API token (you must set this)
 
 **Important**: You **must** set `KOYEB_API_TOKEN` as an environment variable when creating the service, otherwise auto-deletion won't work and you'll need to manually delete the service.
@@ -228,7 +228,7 @@ s3://bop-noipca/
         │   ├── kp14_0_moments.pkl
         │   └── kp14_0_panel.pkl
         └── logs/
-            └── kp14_0_10.log
+            └── kp14-0-10.log
 ```
 
 Files are uploaded **incrementally** as they are created (not at the end), so partial results are preserved even if the workflow fails.
@@ -315,7 +315,7 @@ koyeb services list --app noipca-app
 ./deploy_koyeb.sh bgn 0 1 small
 
 # Monitor
-koyeb services logs bgn_0_1 --app noipca-app --follow
+koyeb services logs bgn-0-1 --app noipca-app --follow
 ```
 
 ### Download all results
