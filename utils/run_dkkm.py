@@ -255,8 +255,8 @@ def main():
     output_file = os.path.join(config.DATA_DIR, f"{panel_id}_dkkm_{nfeatures}.pkl")
     factor_utils.save_factor_results(results, output_file, verbose=True)
 
-    # Save weight matrix separately for AWS upload
-    weight_file = os.path.join(config.DATA_DIR, f"{panel_id}_dkkm_{nfeatures}_W.pkl")
+    # Save weight matrix separately to TEMP_DIR for AWS upload
+    weight_file = os.path.join(config.TEMP_DIR, f"{panel_id}_dkkm_{nfeatures}_W.pkl")
     with open(weight_file, 'wb') as f:
         pickle.dump(weights, f)
     print(f"[OK] Saved weight matrix to {weight_file}")

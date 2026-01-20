@@ -395,7 +395,7 @@ def run_workflow_for_index(model, panel_id, config_module=None, temp_config_obj=
         upload_file(dkkm_file)
 
         # Upload DKKM weight matrix to S3 (if S3 configured)
-        weight_file = os.path.join(DATA_DIR, f"{full_panel_id}_dkkm_{nfeatures}_W.pkl")
+        weight_file = os.path.join(cfg.TEMP_DIR, f"{full_panel_id}_dkkm_{nfeatures}_W.pkl")
         upload_file(weight_file)
 
         # Clean up DKKM file if requested
@@ -637,6 +637,63 @@ def main():
     print(f"Total time: {overall_elapsed:.1f}s ({overall_elapsed/60:.1f}min)")
     print(f"Log file: {log_file}")
     print(f"{'='*70}")
+
+    # If running on Koyeb with --koyeb flag, delete the service to stop billing
+    if use_koyeb:
+        koyeb_app_name = os.environ.get('KOYEB_APP_NAME')
+        koyeb_service_name = os.environ.get('KOYEB_SERVICE_NAME')
+        koyeb_api_token = os.environ.get('KOYEB_API_TOKEN')
+
+        if koyeb_app_name and koyeb_service_name and koyeb_api_token:
+            print(f"\n{'='*70}")
+            print("KOYEB SERVICE SHUTDOWN")
+            print(f"{'='*70}")
+            print(f"Deleting Koyeb service to stop billing...")
+            print(f"  App: {koyeb_app_name}")
+            print(f"  Service: {koyeb_service_name}")
+
+            try:
+                # Use Koyeb CLI to delete the service
+                import subprocess
+                result = subprocess.run(
+                    ['koyeb', 'services', 'delete', koyeb_service_name,
+                     '--app', koyeb_app_name,
+                     '--token', koyeb_api_token],
+                    capture_output=True,
+                    text=True
+                )
+
+                if result.returncode == 0:
+                    print(f"✓ Service deleted successfully")
+                    print(f"  Koyeb billing has stopped")
+                else:
+                    print(f"⚠ Failed to delete service:")
+                    print(f"  {result.stderr}")
+                    print(f"  Note: You may need to manually delete the service to stop billing")
+            except FileNotFoundError:
+                print(f"⚠ Koyeb CLI not found")
+                print(f"  Cannot automatically delete service")
+                print(f"  To stop billing, manually delete the service at:")
+                print(f"  https://app.koyeb.com")
+            except Exception as e:
+                print(f"⚠ Error deleting service: {e}")
+                print(f"  To stop billing, manually delete the service at:")
+                print(f"  https://app.koyeb.com")
+
+            print(f"{'='*70}")
+        else:
+            missing = []
+            if not koyeb_app_name:
+                missing.append('KOYEB_APP_NAME')
+            if not koyeb_service_name:
+                missing.append('KOYEB_SERVICE_NAME')
+            if not koyeb_api_token:
+                missing.append('KOYEB_API_TOKEN')
+
+            print(f"\n⚠ Koyeb service shutdown skipped - missing environment variables:")
+            print(f"  {', '.join(missing)}")
+            print(f"  To stop billing, manually delete the service at:")
+            print(f"  https://app.koyeb.com")
 
 
 if __name__ == "__main__":
