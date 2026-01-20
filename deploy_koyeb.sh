@@ -195,6 +195,7 @@ fi
 echo "Creating Koyeb service..."
 koyeb services create "$SERVICE_NAME" \
   --app "$KOYEB_APP_NAME" \
+  --type worker \
   --git "github.com/$GIT_REPO" \
   --git-branch "$GIT_BRANCH" \
   --git-run-command "python main.py $MODEL $START $END --koyeb" \
