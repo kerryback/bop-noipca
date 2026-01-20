@@ -73,10 +73,33 @@ if [ "$START" -ge "$END" ]; then
     exit 1
 fi
 
+# Load environment variables from .env file if it exists
+if [ -f ".env" ]; then
+    echo "Loading credentials from .env file..."
+    while IFS='=' read -r key value; do
+        # Skip comments and empty lines
+        [[ "$key" =~ ^#.*$ ]] && continue
+        [[ -z "$key" ]] && continue
+
+        # Remove leading/trailing whitespace and quotes
+        key=$(echo "$key" | xargs)
+        value=$(echo "$value" | xargs)
+        value="${value%\"}"
+        value="${value#\"}"
+
+        # Only set if not already set (explicit env vars take priority)
+        if [ -z "${!key}" ]; then
+            export "$key=$value"
+        fi
+    done < .env
+    echo "Loaded credentials from .env"
+fi
+
 # Check required environment variables
 if [ -z "$KOYEB_API_TOKEN" ]; then
     echo "ERROR: KOYEB_API_TOKEN environment variable not set"
     echo "Set it with: export KOYEB_API_TOKEN=your_token"
+    echo "Or add it to .env file: KOYEB_API_TOKEN=your_token"
     exit 1
 fi
 
@@ -85,6 +108,9 @@ if [ -z "$AWS_ACCESS_KEY_ID" ] || [ -z "$AWS_SECRET_ACCESS_KEY" ]; then
     echo "Set them with:"
     echo "  export AWS_ACCESS_KEY_ID=your_key_id"
     echo "  export AWS_SECRET_ACCESS_KEY=your_secret_key"
+    echo "Or add them to .env file:"
+    echo "  AWS_ACCESS_KEY_ID=your_key_id"
+    echo "  AWS_SECRET_ACCESS_KEY=your_secret_key"
     exit 1
 fi
 

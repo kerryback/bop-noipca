@@ -51,38 +51,35 @@ koyeb version
 
 ## Quick Start (Recommended)
 
-### Step 1: Set Environment Variables
+### Step 1: Set Environment Variables (Optional)
 
-**Linux/macOS/Git Bash:**
+If you don't have a `.env` file, set these manually:
+
 ```bash
 export KOYEB_API_TOKEN=your_koyeb_api_token
 export AWS_ACCESS_KEY_ID=AKIA...
 export AWS_SECRET_ACCESS_KEY=...
 ```
 
-**Windows PowerShell:**
-```powershell
-$env:KOYEB_API_TOKEN = "your_koyeb_api_token"
-$env:AWS_ACCESS_KEY_ID = "AKIA..."
-$env:AWS_SECRET_ACCESS_KEY = "..."
-```
-
 Optional (defaults shown):
 ```bash
-# Linux/macOS/Git Bash
 export S3_BUCKET=bop-noipca
 export AWS_REGION=us-east-2
 export KOYEB_APP_NAME=noipca-app
+```
 
-# Windows PowerShell
-$env:S3_BUCKET = "bop-noipca"
-$env:AWS_REGION = "us-east-2"
-$env:KOYEB_APP_NAME = "noipca-app"
+**Or use .env file** (recommended):
+The script automatically loads credentials from `.env` if it exists. Just ensure your `.env` contains:
+```bash
+KOYEB_API_TOKEN=your_token
+AWS_ACCESS_KEY_ID=AKIA...
+AWS_SECRET_ACCESS_KEY=...
+S3_BUCKET=bop-noipca
+AWS_REGION=us-east-2
 ```
 
 ### Step 2: Deploy Using Helper Script
 
-**Linux/macOS/Git Bash:**
 ```bash
 # Deploy kp14 for indices 0-9
 ./deploy_koyeb.sh kp14 0 10
@@ -95,21 +92,6 @@ $env:KOYEB_APP_NAME = "noipca-app"
 
 # Specify custom git repo
 ./deploy_koyeb.sh kp14 0 10 5xlarge yourusername/yourrepo
-```
-
-**Windows PowerShell:**
-```powershell
-# Deploy kp14 for indices 0-9
-.\deploy_koyeb.ps1 kp14 0 10
-
-# Deploy bgn for indices 0-4
-.\deploy_koyeb.ps1 bgn 0 5
-
-# Use larger instance (6xlarge)
-.\deploy_koyeb.ps1 gs21 0 20 6xlarge
-
-# Specify custom git repo
-.\deploy_koyeb.ps1 kp14 0 10 5xlarge yourusername/yourrepo
 ```
 
 ### Step 3: Monitor the Service

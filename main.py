@@ -34,25 +34,17 @@ Koyeb Deployment (self-contained workflow):
 
     Method 1: Using helper script (RECOMMENDED)
 
-        Linux/macOS/Git Bash:
-            # Set required environment variables
+        The script automatically loads credentials from .env file if present.
+        Otherwise, set environment variables manually:
+
             export KOYEB_API_TOKEN=your_token
             export AWS_ACCESS_KEY_ID=AKIA...
             export AWS_SECRET_ACCESS_KEY=...
 
-            # Deploy (one command!)
+        Deploy (one command!):
             ./deploy_koyeb.sh kp14 0 10
 
-        Windows PowerShell:
-            # Set required environment variables
-            $env:KOYEB_API_TOKEN = "your_token"
-            $env:AWS_ACCESS_KEY_ID = "AKIA..."
-            $env:AWS_SECRET_ACCESS_KEY = "..."
-
-            # Deploy (one command!)
-            .\deploy_koyeb.ps1 kp14 0 10
-
-        Monitor and download (all platforms):
+        Monitor and download:
             # Monitor logs
             koyeb services logs kp14_0_10 --app noipca-app --follow
 
