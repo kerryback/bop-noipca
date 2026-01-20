@@ -146,6 +146,16 @@ if ! command -v koyeb &> /dev/null; then
     exit 1
 fi
 
+# Check if app exists, create if it doesn't
+echo "Checking if app '$KOYEB_APP_NAME' exists..."
+if ! koyeb apps get "$KOYEB_APP_NAME" --token "$KOYEB_API_TOKEN" &> /dev/null; then
+    echo "App doesn't exist, creating '$KOYEB_APP_NAME'..."
+    koyeb apps create "$KOYEB_APP_NAME" --token "$KOYEB_API_TOKEN"
+    echo "✓ App created successfully"
+else
+    echo "✓ App already exists"
+fi
+
 # Create the service
 echo "Creating Koyeb service..."
 koyeb services create "$SERVICE_NAME" \
