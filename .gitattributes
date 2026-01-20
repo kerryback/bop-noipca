@@ -4,6 +4,10 @@
 # Python scripts should use LF
 *.py text eol=lf
 
+# Environment files must use LF (credentials with CRLF break APIs)
+.env text eol=lf
+*.env text eol=lf
+
 # Windows scripts use CRLF
 *.ps1 text eol=crlf
 *.bat text eol=crlf
