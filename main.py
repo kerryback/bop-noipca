@@ -20,13 +20,109 @@ Arguments:
     Runs workflow for panel_id in range(start, end)
     S3 uploads happen automatically if S3 environment variables are configured
 
-Examples:
+Examples (local):
     python main.py bgn                    # Runs for index 0 (jgsrc1: N_JOBS=10)
     python main.py bgn 0 5                # Runs for indices 0-4 (jgsrc1: N_JOBS=10)
-    python main.py kp14 0 10 --koyeb      # Runs for indices 0-9 (Koyeb: N_JOBS=24)
+
+Koyeb Deployment (self-contained workflow):
+
+    The --koyeb flag creates a self-contained workflow that:
+    1. Creates a Koyeb service (you run these commands locally)
+    2. Deploys and runs the workflow (automatic)
+    3. Uploads results to S3 (automatic)
+    4. Deletes the service to stop billing (automatic)
+
+    Method 1: Using deploy_koyeb.sh helper script (RECOMMENDED)
+
+        # Set required environment variables
+        export KOYEB_API_TOKEN=your_token
+        export AWS_ACCESS_KEY_ID=AKIA...
+        export AWS_SECRET_ACCESS_KEY=...
+
+        # Deploy (one command!)
+        ./deploy_koyeb.sh kp14 0 10
+
+        # Monitor logs
+        koyeb services logs kp14_0_10 --app noipca-app --follow
+
+        # Download results when complete
+        aws s3 sync s3://bop-noipca/koyeb-results/ ./results/
+
+    Method 2: Manual Koyeb CLI commands
+
+    Step 1: Create and deploy Koyeb service (run locally)
+
+        # Set your parameters
+        export MODEL=kp14              # bgn, kp14, or gs21
+        export START=0                 # Starting index
+        export END=10                  # Ending index
+        export SERVICE_NAME=${MODEL}_${START}_${END}
+        export APP_NAME=noipca-app
+
+        # Create service with required environment variables
+        koyeb services create $SERVICE_NAME \\
+          --app $APP_NAME \\
+          --git github.com/YOUR_USERNAME/YOUR_REPO \\
+          --git-branch main \\
+          --git-run-command "python main.py $MODEL $START $END --koyeb" \\
+          --instance-type 5xlarge \\
+          --regions was \\
+          --env S3_BUCKET=bop-noipca \\
+          --env AWS_ACCESS_KEY_ID=AKIA... \\
+          --env AWS_SECRET_ACCESS_KEY=... \\
+          --env AWS_REGION=us-east-2 \\
+          --env KOYEB_API_TOKEN=YOUR_KOYEB_TOKEN \\
+          --token YOUR_KOYEB_TOKEN
+
+    Step 2: Monitor the service (run locally)
+
+        # Watch service status
+        koyeb services get $SERVICE_NAME --app $APP_NAME
+
+        # View logs in real-time
+        koyeb services logs $SERVICE_NAME --app $APP_NAME --follow
+
+    Step 3: Service auto-deletes when workflow completes
+
+        The service will automatically:
+        - Upload all results to s3://bop-noipca/koyeb-results/{WORKFLOW_ID}/
+        - Delete itself to stop billing
+        - Exit with status 0 if successful
+
+    Step 4: Download results from S3 (run locally)
+
+        # List available workflow runs
+        aws s3 ls s3://bop-noipca/koyeb-results/
+
+        # Download specific run
+        aws s3 sync s3://bop-noipca/koyeb-results/YYYYMMDD_HHMMSS/ ./results/
+
+    Quick example (complete workflow):
+
+        # Deploy kp14 for indices 0-9 on Koyeb
+        koyeb services create kp14_0_10 \\
+          --app noipca-app \\
+          --git github.com/YOUR_USERNAME/YOUR_REPO \\
+          --git-branch main \\
+          --git-run-command "python main.py kp14 0 10 --koyeb" \\
+          --instance-type 5xlarge \\
+          --regions was \\
+          --env S3_BUCKET=bop-noipca \\
+          --env AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \\
+          --env AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \\
+          --env AWS_REGION=us-east-2 \\
+          --env KOYEB_API_TOKEN=$KOYEB_API_TOKEN \\
+          --token $KOYEB_API_TOKEN
+
+        # Monitor logs
+        koyeb services logs kp14_0_10 --app noipca-app --follow
+
+        # Service auto-deletes when done, download results from S3
+        aws s3 sync s3://bop-noipca/koyeb-results/ ./results/ --exclude "*" --include "*/kp14_*"
 
 Output:
     All output is logged to: logs/{model}_{start}_{end}.log
+    S3 uploads (if configured): s3://{S3_BUCKET}/koyeb-results/{WORKFLOW_ID}/
 """
 
 import sys
