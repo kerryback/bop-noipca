@@ -25,11 +25,6 @@ RUN mkdir -p logs outputs
 # Set Python to run in unbuffered mode for better logging
 ENV PYTHONUNBUFFERED=1
 
-# Make run_workflow.sh executable
-RUN chmod +x run_workflow.sh
-
-# Default workflow type (can be overridden via environment variable)
-ENV WORKFLOW_TYPE=kp14
-
-# Run workflow based on WORKFLOW_TYPE environment variable
-CMD ["./run_workflow.sh"]
+# Default entrypoint - can be overridden by --git-run-command in Koyeb
+# Usage: Set MODEL, START, END env vars, or use --git-run-command
+CMD ["python", "main.py", "kp14", "0", "1", "--koyeb"]

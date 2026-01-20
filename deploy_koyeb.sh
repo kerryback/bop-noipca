@@ -58,7 +58,33 @@ MODEL=$1
 START=$2
 END=$3
 INSTANCE_TYPE=${4:-5xlarge}
-GIT_REPO=${5:-YOUR_USERNAME/YOUR_REPO}
+GIT_REPO=${5:-}
+
+# Auto-detect git repository if not provided
+if [ -z "$GIT_REPO" ]; then
+    echo "Auto-detecting git repository..."
+    if git remote get-url origin &> /dev/null; then
+        # Extract username/repo from git remote URL
+        # Handles both HTTPS and SSH formats
+        REMOTE_URL=$(git remote get-url origin)
+
+        # Extract from HTTPS: https://github.com/user/repo.git -> user/repo
+        if [[ "$REMOTE_URL" =~ github\.com[:/]([^/]+/[^/]+)(\.git)?$ ]]; then
+            GIT_REPO="${BASH_REMATCH[1]}"
+            GIT_REPO="${GIT_REPO%.git}"  # Remove .git suffix if present
+            echo "✓ Detected repository: $GIT_REPO"
+        else
+            echo "ERROR: Could not parse git remote URL: $REMOTE_URL"
+            echo "Please specify git repo manually: $0 $MODEL $START $END $INSTANCE_TYPE username/repo"
+            exit 1
+        fi
+    else
+        echo "ERROR: No git repository detected and none specified"
+        echo "Either run from a git repository or specify manually:"
+        echo "  $0 $MODEL $START $END $INSTANCE_TYPE username/repo"
+        exit 1
+    fi
+fi
 
 # Validate model
 if [[ ! "$MODEL" =~ ^(bgn|kp14|gs21)$ ]]; then
@@ -120,8 +146,8 @@ AWS_REGION=${AWS_REGION:-us-east-2}
 KOYEB_APP_NAME=${KOYEB_APP_NAME:-noipca-app}
 KOYEB_REGION=${KOYEB_REGION:-was}
 
-# Generate service name
-SERVICE_NAME="${MODEL}_${START}_${END}"
+# Generate service name (use hyphens for Koyeb naming compliance)
+SERVICE_NAME="${MODEL}-${START}-${END}"
 
 echo "=========================================="
 echo "KOYEB DEPLOYMENT"
