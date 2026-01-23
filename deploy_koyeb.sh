@@ -156,8 +156,9 @@ if [ -z "$GIT_BRANCH" ]; then
     fi
 fi
 
-# Generate service name from job arguments
-SERVICE_NAME="${MODEL}-${START}-${END}"
+# Generate service name from job arguments (includes timestamp to avoid name conflicts)
+TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+SERVICE_NAME="${MODEL}-${START}-${END}-${TIMESTAMP}"
 
 echo "=========================================="
 echo "KOYEB DEPLOYMENT"
@@ -200,7 +201,7 @@ koyeb services create "$SERVICE_NAME" \
   --type worker \
   --git "github.com/$GIT_REPO" \
   --git-branch "$GIT_BRANCH" \
-  --git-run-command "python main.py $MODEL $START $END --koyeb && curl -s -X POST \$MONITOR_URL/kill -H \"Content-Type: application/json\" -d \"{\\\"service_name\\\": \\\"\$KOYEB_SERVICE_NAME\\\", \\\"app_name\\\": \\\"\$KOYEB_APP_NAME\\\"}\"" \
+  --git-run-command "python main.py $MODEL $START $END --koyeb; curl -s -X POST \$MONITOR_URL/kill -H \"Content-Type: application/json\" -d \"{\\\"service_name\\\": \\\"\$KOYEB_SERVICE_NAME\\\", \\\"app_name\\\": \\\"\$KOYEB_APP_NAME\\\"}\"" \
   --instance-type "$INSTANCE_TYPE" \
   --regions "$KOYEB_REGION" \
   --env MONITOR_URL="$MONITOR_URL" \
