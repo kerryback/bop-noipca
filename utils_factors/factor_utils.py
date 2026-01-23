@@ -277,14 +277,15 @@ def rank_standardize(arr: np.ndarray) -> np.ndarray:
     """
     Rank-based standardization (cross-sectional).
 
-    Maps values to [-0.5, 0.5] based on their rank.
+    Maps values to exactly [-0.5, 0.5] based on their rank.
+    Smallest value → -0.5, Largest value → 0.5
     Uses average ranking for ties (matches pandas .rank() behavior).
 
     Args:
         arr: (N,) or (N, P) array
 
     Returns:
-        Standardized array with same shape
+        Standardized array with same shape, range [-0.5, 0.5]
     """
     from scipy.stats import rankdata
 
@@ -301,8 +302,11 @@ def rank_standardize(arr: np.ndarray) -> np.ndarray:
     for j in range(P):
         # Rank using average method for ties (1-based, like pandas)
         ranks = rankdata(arr[:, j], method='average')
-        # Map to [-0.5, 0.5]
-        result[:, j] = (ranks - 0.5) / N - 0.5
+        # Map [1, N] to [-0.5, 0.5]: (ranks - 1) / (N - 1) - 0.5
+        if N > 1:
+            result[:, j] = (ranks - 1) / (N - 1) - 0.5
+        else:
+            result[:, j] = 0.0  # Single observation maps to 0
 
     return result.squeeze() if squeeze else result
 

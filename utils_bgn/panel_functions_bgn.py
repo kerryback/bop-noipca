@@ -236,10 +236,10 @@ def create_panel(N, T, arr_tuple):
     # roe = cash flow over beginning of month book equity
     # roe at date 0 = NAN
     # roe at date 1 = cash flow from 0 to 1 divided by date 0 book equity
-    # If book equity is zero or negative, set roe to 0
+    # If book equity is zero or negative, set roe to NaN (will be dropped later)
     df["roe"] = df.groupby("firmid", group_keys=False).apply(
         lambda d: pd.Series(
-            np.where(d.book > 0, d.op_cash_flow / d.book, 0),
+            np.where(d.book > 0, d.op_cash_flow / d.book, np.nan),
             index=d.index
         ).shift()
     )
@@ -251,10 +251,10 @@ def create_panel(N, T, arr_tuple):
     df["mom"] = df.groupby("firmid", group_keys=False).cumret.apply(
         lambda x: x.shift(2) / x.shift(13) - 1
     )
-    # Asset growth: set to 0 when previous book equity is zero or negative
+    # Asset growth: set to NaN when previous book equity is zero or negative (will be dropped later)
     df["agr"] = df.groupby("firmid", group_keys=False).book.apply(
         lambda x: pd.Series(
-            np.where(x.shift(1) > 0, x.pct_change(), 0),
+            np.where(x.shift(1) > 0, x.pct_change(), np.nan),
             index=x.index
         )
     )

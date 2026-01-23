@@ -11,7 +11,7 @@ import os
 # =============================================================================
 
 N = 1000 # Number of firms (set to 50 for testing)
-T = 721   # Number of time periods (excluding burnin) (set to 400 for testing)
+T = 720   # Number of time periods (excluding burnin) (set to 400 for testing)
 BGN_BURNIN = 200  # BGN burnin period
 KP14_BURNIN = 200  # KP14 burnin period
 GS21_BURNIN = 200  # GS21 burnin period
@@ -87,7 +87,7 @@ KEEP_FACTOR_DETAILS = False  # If False, keep only {method}_stats in factor pick
 # DKKM parameters
 INCLUDE_MKT = True  # Include market in DKKM
 NMAT = 1  # Number of weight matrices for DKKM
-N_DKKM_FEATURES_LIST = [6, 36, 360, 3600, 36000]  # List of feature counts for DKKM computation (removed 360000 due to OOM on 5xlarge)
+N_DKKM_FEATURES_LIST = [6, 36, 360, 3600]  # List of feature counts for DKKM computation (removed 360000 due to OOM on 5xlarge)
 DKKM_RANK_STANDARDIZE = True  # Rank-standardize characteristics in DKKM
 
 # Shrinkage parameters (Berk-Jameson regularization)

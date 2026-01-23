@@ -1,0 +1,131 @@
+Started at Thu 22 Jan 2026, 06:44PM
+
+Configuration:
+  Model: kp14
+  Index range: 0 to 0 (inclusive)
+  Total runs: 1
+  DKKM features: [6, 36, 360, 3600]
+  N_JOBS: 10
+  Log file: C:\Users\kerry\repos\CodeNew\noipca\logs\kp14_0_1.log
+
+Directories:
+  DATA_DIR (permanent): C:\Users\kerry\repos\CodeNew\noipca\outputs
+  TEMP_DIR (temporary): /opt/scratch/keb7
+    (using separate scratch directory)
+
+[PARALLELISM] Set NUMBA_NUM_THREADS=1 (avoid nested parallelism with n_jobs=10)
+
+======================================================================
+RUNNING WORKFLOW FOR KP14_0
+======================================================================
+
+======================================================================
+STEP 1: Generating KP14 panel data (index=0)
+======================================================================
+
+======================================================================
+PANEL GENERATION
+======================================================================
+Model: KP14
+Identifier: 0
+Started at Thu 22 Jan 2026, 06:44PM
+======================================================================
+
+Parameters:
+  N (firms): 1000
+  T (periods): 720
+  Burnin: 200
+  Characteristics: ['size', 'bm', 'agr', 'roe', 'mom']
+
+----------------------------------------------------------------------
+Generating panel for KP14 model...
+----------------------------------------------------------------------
+Creating arrays...
+Creating panel...
+
+Firm-months with bm=0 (after burnin): 16,011
+
+----------------------------------------------------------------------
+Saving panel and arrays to /opt/scratch/keb7\kp14_0_panel.pkl...
+----------------------------------------------------------------------
+[OK] Saved successfully
+
+----------------------------------------------------------------------
+PANEL SUMMARY
+----------------------------------------------------------------------
+Model: KP14 (identifier=0)
+  Shape: (720000, 9)
+  Columns: ['month', 'firmid', 'mve', 'xret', 'roe', 'bm', 'mom', 'agr', 'size']
+  Months: 200 to 919
+  Unique months: 720
+  Firms: 1000
+  Characteristics: ['size', 'bm', 'agr', 'roe', 'mom']
+  Mean excess return: 0.0054
+  Std excess return: 0.0658
+
+======================================================================
+GENERATION COMPLETE
+======================================================================
+Finished at Thu 22 Jan 2026, 09:04PM
+Total runtime: 8437.6s (140.6 minutes)
+
+Output file: /opt/scratch/keb7\kp14_0_panel.pkl
+
+To compute SDF moments:
+  python calculate_moments.py kp14_0
+
+To extract factors:
+  python run_fama.py kp14_0
+  python run_dkkm.py kp14_0 1000
+======================================================================
+
+======================================================================
+STEP 2: Calculating SDF conditional moments (rp, cond_var, etc.)
+======================================================================
+
+[Parallel(n_jobs=10)]: Using backend LokyBackend with 10 concurrent workers.
+[Parallel(n_jobs=10)]: Done  42 out of  50 | elapsed:  6.8min remaining:  1.3min
+[Parallel(n_jobs=10)]: Done  50 out of  50 | elapsed:  6.9min finished
+[Parallel(n_jobs=10)]: Using backend LokyBackend with 10 concurrent workers.
+======================================================================
+SDF CONDITIONAL MOMENTS CALCULATION
+======================================================================
+Panel ID: kp14_0
+Model: kp14
+Started at Thu 22 Jan 2026, 09:04PM
+======================================================================
+
+Loading panel from /opt/scratch/keb7\kp14_0_panel.pkl...
+Loaded arrays: N=1000, T=720
+
+----------------------------------------------------------------------
+Computing SDF conditional moments...
+----------------------------------------------------------------------
+Computing moments for months 560 to 919
+  Total: 360 months
+  Using parallel processing with n_jobs=10
+  Processing in 8 chunks of 50 months each
+----------------------------------------------------------------------
+
+Chunk 1/8: months 560 to 609 (50 months)
+  [OK] Chunk 1 saved to kp14_0_moments_chunk0.pkl
+
+Chunk 2/8: months 610 to 659 (50 months)
+Traceback (most recent call last):
+  File "C:\Users\kerry\repos\CodeNew\noipca\utils\calculate_moments.py", line 288, in <module>
+    main()
+    ~~~~^^
+  File "C:\Users\kerry\repos\CodeNew\noipca\utils\calculate_moments.py", line 187, in main
+    chunk_results = parallel(
+        delayed(compute_month_moments)(sdf_loop, month)
+        for month in chunk_months
+    )
+  File "C:\Users\kerry\AppData\Local\Programs\Python\Python313\Lib\site-packages\joblib\parallel.py", line 2007, in __call__
+    return output if self.return_generator else list(output)
+                                                ~~~~^^^^^^^^
+  File "C:\Users\kerry\AppData\Local\Programs\Python\Python313\Lib\site-packages\joblib\parallel.py", line 1650, in _get_outputs
+    yield from self._retrieve()
+  File "C:\Users\kerry\AppData\Local\Programs\Python\Python313\Lib\site-packages\joblib\parallel.py", line 1762, in _retrieve
+    time.sleep(0.01)
+    ~~~~~~~~~~^^^^^^
+KeyboardInterrupt

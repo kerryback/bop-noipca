@@ -23,8 +23,10 @@ Examples:
 import sys
 import os
 
-# Add current directory to path for imports
+# Add current directory and parent directory to path for imports
+# Parent directory is needed for temp_config files created by main.py
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import numpy as np
 import pandas as pd
@@ -51,7 +53,6 @@ gamma_grid = config.GAMMA_GRID
 # Import refactored modules
 try:
     from utils_factors import dkkm_functions as dkkm
-    from utils_factors import portfolio_stats
     from utils_factors import factor_utils
 except ImportError as e:
     print(f"Import error: {e}")
@@ -195,22 +196,32 @@ def main():
 
     dkkm_stats = None
     if dkkm_factors is not None:
-        # Get market returns if needed
+        # Get market returns if needed (from FF factor returns, like root code uses)
         mkt_returns = None
-        if CONFIG['include_mkt'] and 'arrays' in arrays_data:
-            # Extract market returns from arrays (if available)
-            arrays = arrays_data['arrays']
-            if 'mkt_rf' in arrays:
-                mkt_returns = pd.DataFrame(
-                    {'mkt_rf': arrays['mkt_rf']},
-                    index=range(start, end + 1)
+        if CONFIG['include_mkt']:
+            # Load FF returns from fama results file - REQUIRED when include_mkt=True
+            fama_file = os.path.join(config.DATA_DIR, f"{panel_id}_fama.pkl")
+            if not os.path.exists(fama_file):
+                raise FileNotFoundError(
+                    f"include_mkt=True but fama file not found at {fama_file}. "
+                    f"Run run_fama.py first to generate FF returns."
                 )
-                mkt_returns.index.name = 'month'
+            with open(fama_file, 'rb') as f:
+                fama_data = pickle.load(f)
+            if 'ff_returns' not in fama_data:
+                raise KeyError(
+                    f"include_mkt=True but 'ff_returns' key not found in {fama_file}. "
+                    f"Re-run run_fama.py to regenerate the file."
+                )
+            ff_returns = fama_data['ff_returns']
+            # Use the last column (mkt_rf) as market returns
+            mkt_returns = ff_returns.iloc[:, -1]
+            print(f"  Loaded FF market returns from {fama_file}")
 
         # Get the weight matrix for the first iteration
         W = dkkm_lst[0][0]
 
-        dkkm_stats = portfolio_stats.compute_dkkm_portfolio_stats(
+        dkkm_stats = dkkm.compute_portfolio_stats(
             dkkm_factors,
             panel,
             panel_id=panel_id,

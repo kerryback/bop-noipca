@@ -1,0 +1,693 @@
+Started at Sun 18 Jan 2026, 08:43AM
+
+Configuration:
+  Model: kp14
+  Index range: 0 to 9 (inclusive)
+  Total runs: 10
+  DKKM features: [6, 36, 360, 3600, 36000, 360000]
+  N_JOBS: 24
+  Log file: /app/logs/kp14_0_10.log
+
+Directories:
+  DATA_DIR (permanent): /app/outputs
+  TEMP_DIR (temporary): /app/outputs
+    (using DATA_DIR for temporary files)
+
+[PARALLELISM] Set NUMBA_NUM_THREADS=1 (avoid nested parallelism with n_jobs=24)
+
+======================================================================
+RUNNING WORKFLOW FOR KP14_0
+======================================================================
+
+======================================================================
+STEP 1: Generating KP14 panel data (index=0)
+======================================================================
+
+======================================================================
+PANEL GENERATION
+======================================================================
+Model: KP14
+Identifier: 0
+Started at Sun 18 Jan 2026, 08:43AM
+======================================================================
+
+Parameters:
+  N (firms): 1000
+  T (periods): 720
+  Burnin: 300
+  Characteristics: ['size', 'bm', 'agr', 'roe', 'mom']
+
+----------------------------------------------------------------------
+Generating panel for KP14 model...
+----------------------------------------------------------------------
+Creating arrays...
+Creating panel...
+
+Firm-months with bm=0 (after burnin): 14,376
+
+----------------------------------------------------------------------
+Saving panel and arrays to /app/outputs/kp14_0_panel.pkl...
+----------------------------------------------------------------------
+[OK] Saved successfully
+
+----------------------------------------------------------------------
+PANEL SUMMARY
+----------------------------------------------------------------------
+Model: KP14 (identifier=0)
+  Shape: (720000, 9)
+  Columns: ['month', 'firmid', 'mve', 'xret', 'roe', 'bm', 'mom', 'agr', 'size']
+  Months: 300 to 1019
+  Unique months: 720
+  Firms: 1000
+  Characteristics: ['size', 'bm', 'agr', 'roe', 'mom']
+  Mean excess return: 0.0036
+  Std excess return: 0.0650
+
+======================================================================
+GENERATION COMPLETE
+======================================================================
+Finished at Sun 18 Jan 2026, 08:51AM
+Total runtime: 450.0s (7.5 minutes)
+
+Output file: /app/outputs/kp14_0_panel.pkl
+
+To compute SDF moments:
+  python calculate_moments.py kp14_0
+
+To extract factors:
+  python run_fama.py kp14_0
+  python run_dkkm.py kp14_0 1000
+======================================================================
+
+======================================================================
+STEP 2: Calculating SDF conditional moments (rp, cond_var, etc.)
+======================================================================
+
+======================================================================
+SDF CONDITIONAL MOMENTS CALCULATION
+======================================================================
+Panel ID: kp14_0
+Model: kp14
+Started at Sun 18 Jan 2026, 08:51AM
+======================================================================
+
+Loading panel from /app/outputs/kp14_0_panel.pkl...
+Loaded arrays: N=1000, T=720
+
+----------------------------------------------------------------------
+Computing SDF conditional moments...
+----------------------------------------------------------------------
+Computing moments for months 660 to 1019
+  Total: 360 months
+  Using parallel processing with n_jobs=24
+  Processing in 8 chunks of 50 months each
+----------------------------------------------------------------------
+
+Chunk 1/8: months 660 to 709 (50 months)
+[Parallel(n_jobs=24)]: Using backend LokyBackend with 24 concurrent workers.
+[Parallel(n_jobs=24)]: Done  14 out of  50 | elapsed:  1.3min remaining:  3.2min
+[Parallel(n_jobs=24)]: Done  25 out of  50 | elapsed:  1.9min remaining:  1.9min
+[Parallel(n_jobs=24)]: Done  36 out of  50 | elapsed:  2.0min remaining:   46.3s
+[Parallel(n_jobs=24)]: Done  47 out of  50 | elapsed:  2.0min remaining:    7.8s
+[Parallel(n_jobs=24)]: Done  50 out of  50 | elapsed:  2.5min finished
+  [OK] Chunk 1 saved to kp14_0_moments_chunk0.pkl
+
+Chunk 2/8: months 710 to 759 (50 months)
+[Parallel(n_jobs=24)]: Using backend LokyBackend with 24 concurrent workers.
+[Parallel(n_jobs=24)]: Done  14 out of  50 | elapsed:   58.1s remaining:  2.5min
+[Parallel(n_jobs=24)]: Done  25 out of  50 | elapsed:  1.7min remaining:  1.7min
+[Parallel(n_jobs=24)]: Done  36 out of  50 | elapsed:  1.8min remaining:   41.3s
+[Parallel(n_jobs=24)]: Done  47 out of  50 | elapsed:  1.9min remaining:    7.2s
+[Parallel(n_jobs=24)]: Done  50 out of  50 | elapsed:  2.4min finished
+  [OK] Chunk 2 saved to kp14_0_moments_chunk1.pkl
+
+Chunk 3/8: months 760 to 809 (50 months)
+[Parallel(n_jobs=24)]: Using backend LokyBackend with 24 concurrent workers.
+[Parallel(n_jobs=24)]: Done  14 out of  50 | elapsed:  1.1min remaining:  2.7min
+[Parallel(n_jobs=24)]: Done  25 out of  50 | elapsed:  1.9min remaining:  1.9min
+[Parallel(n_jobs=24)]: Done  36 out of  50 | elapsed:  2.0min remaining:   46.2s
+[Parallel(n_jobs=24)]: Done  47 out of  50 | elapsed:  2.1min remaining:    8.0s
+[Parallel(n_jobs=24)]: Done  50 out of  50 | elapsed:  2.6min finished
+  [OK] Chunk 3 saved to kp14_0_moments_chunk2.pkl
+
+Chunk 4/8: months 810 to 859 (50 months)
+[Parallel(n_jobs=24)]: Using backend LokyBackend with 24 concurrent workers.
+[Parallel(n_jobs=24)]: Done  14 out of  50 | elapsed:  1.2min remaining:  3.1min
+[Parallel(n_jobs=24)]: Done  25 out of  50 | elapsed:  2.3min remaining:  2.3min
+[Parallel(n_jobs=24)]: Done  36 out of  50 | elapsed:  2.4min remaining:   55.1s
+[Parallel(n_jobs=24)]: Done  47 out of  50 | elapsed:  2.4min remaining:    9.3s
+[Parallel(n_jobs=24)]: Done  50 out of  50 | elapsed:  3.2min finished
+  [OK] Chunk 4 saved to kp14_0_moments_chunk3.pkl
+
+Chunk 5/8: months 860 to 909 (50 months)
+[Parallel(n_jobs=24)]: Using backend LokyBackend with 24 concurrent workers.
+[Parallel(n_jobs=24)]: Done  14 out of  50 | elapsed:  1.5min remaining:  3.9min
+[Parallel(n_jobs=24)]: Done  25 out of  50 | elapsed:  2.6min remaining:  2.6min
+[Parallel(n_jobs=24)]: Done  36 out of  50 | elapsed:  2.8min remaining:  1.1min
+[Parallel(n_jobs=24)]: Done  47 out of  50 | elapsed:  2.8min remaining:   10.8s
+[Parallel(n_jobs=24)]: Done  50 out of  50 | elapsed:  3.7min finished
+  [OK] Chunk 5 saved to kp14_0_moments_chunk4.pkl
+
+Chunk 6/8: months 910 to 959 (50 months)
+[Parallel(n_jobs=24)]: Using backend LokyBackend with 24 concurrent workers.
+[Parallel(n_jobs=24)]: Done  14 out of  50 | elapsed:  1.5min remaining:  3.8min
+[Parallel(n_jobs=24)]: Done  25 out of  50 | elapsed:  2.7min remaining:  2.7min
+[Parallel(n_jobs=24)]: Done  36 out of  50 | elapsed:  2.9min remaining:  1.1min
+[Parallel(n_jobs=24)]: Done  47 out of  50 | elapsed:  2.9min remaining:   11.2s
+[Parallel(n_jobs=24)]: Done  50 out of  50 | elapsed:  3.8min finished
+  [OK] Chunk 6 saved to kp14_0_moments_chunk5.pkl
+
+Chunk 7/8: months 960 to 1009 (50 months)
+[Parallel(n_jobs=24)]: Using backend LokyBackend with 24 concurrent workers.
+[Parallel(n_jobs=24)]: Done  14 out of  50 | elapsed:  1.6min remaining:  4.0min
+[Parallel(n_jobs=24)]: Done  25 out of  50 | elapsed:  3.1min remaining:  3.1min
+[Parallel(n_jobs=24)]: Done  36 out of  50 | elapsed:  3.3min remaining:  1.3min
+[Parallel(n_jobs=24)]: Done  47 out of  50 | elapsed:  3.4min remaining:   12.9s
+[Parallel(n_jobs=24)]: Done  50 out of  50 | elapsed:  4.3min finished
+  [OK] Chunk 7 saved to kp14_0_moments_chunk6.pkl
+
+Chunk 8/8: months 1010 to 1019 (10 months)
+[Parallel(n_jobs=24)]: Using backend LokyBackend with 24 concurrent workers.
+[Parallel(n_jobs=24)]: Done   2 out of  10 | elapsed:  1.4min remaining:  5.4min
+[Parallel(n_jobs=24)]: Done   5 out of  10 | elapsed:  1.4min remaining:  1.4min
+[Parallel(n_jobs=24)]: Done   8 out of  10 | elapsed:  1.4min remaining:   20.7s
+[Parallel(n_jobs=24)]: Done  10 out of  10 | elapsed:  1.4min finished
+  [OK] Chunk 8 saved to kp14_0_moments_chunk7.pkl
+
+----------------------------------------------------------------------
+[OK] All chunks computed in 1450.3s (24.2 minutes)
+
+----------------------------------------------------------------------
+Consolidating chunks into final moments dictionary...
+----------------------------------------------------------------------
+  Loading chunk 1/8...
+  Loading chunk 2/8...
+  Loading chunk 3/8...
+  Loading chunk 4/8...
+  Loading chunk 5/8...
+  Loading chunk 6/8...
+  Loading chunk 7/8...
+  Loading chunk 8/8...
+  Sorting moments by month...
+[OK] Consolidated 360 months
+
+Saving consolidated moments to /app/outputs/kp14_0_moments.pkl...
+[OK] Moments saved successfully
+
+Cleaning up temporary chunk files...
+  Deleted kp14_0_moments_chunk0.pkl
+  Deleted kp14_0_moments_chunk1.pkl
+  Deleted kp14_0_moments_chunk2.pkl
+  Deleted kp14_0_moments_chunk3.pkl
+  Deleted kp14_0_moments_chunk4.pkl
+  Deleted kp14_0_moments_chunk5.pkl
+  Deleted kp14_0_moments_chunk6.pkl
+  Deleted kp14_0_moments_chunk7.pkl
+[OK] Cleanup complete
+
+======================================================================
+COMPUTATION COMPLETE
+======================================================================
+Finished at Sun 18 Jan 2026, 09:16AM
+Total runtime: 1483.7s (24.7 minutes)
+
+Output file: /app/outputs/kp14_0_moments.pkl
+  Months: 660 to 1019 (360 total)
+  Each month contains:
+    - rp: (1000,) expected returns vector
+    - cond_var: (1000, 1000) conditional variance matrix
+    - second_moment: (1000, 1000) second moment matrix
+    - second_moment_inv: (1000, 1000) inverse second moment matrix
+    - sdf_ret: scalar SDF return
+    - max_sr: scalar maximum Sharpe ratio
+
+To load moments:
+  import pickle
+  with open('/app/outputs/kp14_0_moments.pkl', 'rb') as f:
+      data = pickle.load(f)
+  moments = data['moments']
+  # Access specific month:
+  rp = moments[660]['rp']
+  cond_var = moments[660]['cond_var']
+======================================================================
+
+======================================================================
+STEP 3: Computing Fama-French and Fama-MacBeth factors
+======================================================================
+
+
+Loading panel from /app/outputs/kp14_0_panel.pkl...
+Loaded panel: shape=(720000, 9)
+
+Panel after cleaning:
+  Start month: 300, End month: 1019
+  Total observations: 720000
+======================================================================
+FAMA-FRENCH & FAMA-MACBETH FACTORS
+======================================================================
+Model: kp14
+Panel ID: kp14_0
+Configuration: N=1000, T=720, n_jobs=24
+Methods: Fama-French, Fama-MacBeth
+Started at Sun 18 Jan 2026, 09:16AM
+======================================================================
+
+----------------------------------------------------------------------
+Computing Fama-French and Fama-MacBeth factors...
+[OK] Fama factors computed in 2.0s at 09:16AM
+
+----------------------------------------------------------------------
+Extracting model factors from array data...
+  [INFO] No model factors computed (only available for BGN model)
+
+----------------------------------------------------------------------
+Computing portfolio statistics...
+  Alpha grids: Fama=[0]
+  [OK] Fama stats: 720 observations
+[OK] Portfolio statistics computed in 9.2s
+
+Factor Returns Summary:
+  FF returns shape: (720, 6)
+  FM returns shape: (720, 6)
+
+[OK] Results saved to: /app/outputs/kp14_0_fama.pkl
+     Dictionary keys: ['ff_returns', 'fm_returns', 'fama_stats', 'model_premia_taylor', 'model_premia_proj', 'model_stats', 'panel_id', 'model', 'chars', 'start', 'end']
+
+     Contents:
+       ff_returns: DataFrame (720, 6)
+       fm_returns: DataFrame (720, 6)
+       fama_stats: DataFrame (720, 8)
+       model_premia_taylor: None
+       model_premia_proj: None
+       model_stats: None
+       panel_id: str = kp14_0
+       model: str = kp14
+       chars: list (length 5)
+       start: int64 = 300
+       end: int64 = 1019
+
+Total runtime: 37.8s (0.6 minutes)
+
+======================================================================
+COMPUTATION COMPLETE
+======================================================================
+Finished at Sun 18 Jan 2026, 09:16AM
+
+Usage examples:
+  import pickle
+  with open('/app/outputs/kp14_0_fama.pkl', 'rb') as f:
+      results = pickle.load(f)
+  ff = results['ff_returns']
+  fm = results['fm_returns']
+======================================================================
+[CLEANUP] Reduced kp14_0_fama.pkl: 0.12 MB -> 0.04 MB
+
+======================================================================
+STEP 4.1: Computing DKKM factors (nfeatures=6)
+======================================================================
+
+
+Loading panel from /app/outputs/kp14_0_panel.pkl...
+Loaded panel: shape=(720000, 9)
+
+Panel after cleaning:
+  Start month: 300, End month: 1019
+  Total observations: 720000
+======================================================================
+DKKM (RANDOM FOURIER FEATURES) FACTORS
+======================================================================
+Model: kp14
+Panel ID: kp14_0
+Configuration: N=1000, T=720, n_jobs=24
+Features: 6
+Started at Sun 18 Jan 2026, 09:17AM
+======================================================================
+
+----------------------------------------------------------------------
+Computing DKKM factors...
+  Features: 6, Matrices: 1
+  Rank standardize: True
+  Weight matrix 1/1
+[ACCELERATION] Using Numba-accelerated DKKM functions
+[OK] DKKM factors computed in 9.1s at 09:17AM
+
+----------------------------------------------------------------------
+Computing portfolio statistics...
+  Alpha grid: [0, 0.0001, 0.001, 0.01, 0.05, 0.1, 1]
+  Include market: True
+  [OK] DKKM stats: 2520 observations
+[OK] Portfolio statistics computed in 16.6s
+
+Factor Returns Summary:
+  DKKM: 1 weight matrices
+  Features: 6
+  Rank standardize: True
+
+[OK] Results saved to: /app/outputs/kp14_0_dkkm_6.pkl
+     Dictionary keys: ['dkkm_factors', 'dkkm_stats', 'weights', 'nfeatures', 'nmat', 'rank_standardize', 'panel_id', 'model', 'chars', 'start', 'end']
+
+     Contents:
+       dkkm_factors: DataFrame (720, 6)
+       dkkm_stats: DataFrame (2520, 9)
+       weights: ndarray (3, 5)
+       nfeatures: int = 6
+       nmat: int = 1
+       rank_standardize: bool = True
+       panel_id: str = kp14_0
+       model: str = kp14
+       chars: list (length 5)
+       start: int64 = 300
+       end: int64 = 1019
+
+Total runtime: 37.7s (0.6 minutes)
+
+======================================================================
+COMPUTATION COMPLETE
+======================================================================
+Finished at Sun 18 Jan 2026, 09:17AM
+
+Usage examples:
+  import pickle
+  with open('/app/outputs/kp14_0_dkkm_6.pkl', 'rb') as f:
+      results = pickle.load(f)
+  dkkm = results['dkkm_factors']
+======================================================================
+[CLEANUP] Reduced kp14_0_dkkm_6.pkl: 0.18 MB -> 0.16 MB
+
+======================================================================
+STEP 4.2: Computing DKKM factors (nfeatures=36)
+======================================================================
+
+
+Loading panel from /app/outputs/kp14_0_panel.pkl...
+Loaded panel: shape=(720000, 9)
+
+Panel after cleaning:
+  Start month: 300, End month: 1019
+  Total observations: 720000
+======================================================================
+DKKM (RANDOM FOURIER FEATURES) FACTORS
+======================================================================
+Model: kp14
+Panel ID: kp14_0
+Configuration: N=1000, T=720, n_jobs=24
+Features: 36
+Started at Sun 18 Jan 2026, 09:17AM
+======================================================================
+
+----------------------------------------------------------------------
+Computing DKKM factors...
+  Features: 36, Matrices: 1
+  Rank standardize: True
+  Weight matrix 1/1
+[ACCELERATION] Using Numba-accelerated DKKM functions
+[OK] DKKM factors computed in 1.5s at 09:17AM
+
+----------------------------------------------------------------------
+Computing portfolio statistics...
+  Alpha grid: [0, 0.0001, 0.001, 0.01, 0.05, 0.1, 1]
+  Include market: True
+  [OK] DKKM stats: 2520 observations
+[OK] Portfolio statistics computed in 22.0s
+
+Factor Returns Summary:
+  DKKM: 1 weight matrices
+  Features: 36
+  Rank standardize: True
+
+[OK] Results saved to: /app/outputs/kp14_0_dkkm_36.pkl
+     Dictionary keys: ['dkkm_factors', 'dkkm_stats', 'weights', 'nfeatures', 'nmat', 'rank_standardize', 'panel_id', 'model', 'chars', 'start', 'end']
+
+     Contents:
+       dkkm_factors: DataFrame (720, 36)
+       dkkm_stats: DataFrame (2520, 9)
+       weights: ndarray (18, 5)
+       nfeatures: int = 36
+       nmat: int = 1
+       rank_standardize: bool = True
+       panel_id: str = kp14_0
+       model: str = kp14
+       chars: list (length 5)
+       start: int64 = 300
+       end: int64 = 1019
+
+Total runtime: 34.7s (0.6 minutes)
+
+======================================================================
+COMPUTATION COMPLETE
+======================================================================
+Finished at Sun 18 Jan 2026, 09:18AM
+
+Usage examples:
+  import pickle
+  with open('/app/outputs/kp14_0_dkkm_36.pkl', 'rb') as f:
+      results = pickle.load(f)
+  dkkm = results['dkkm_factors']
+======================================================================
+[CLEANUP] Reduced kp14_0_dkkm_36.pkl: 0.26 MB -> 0.16 MB
+
+======================================================================
+STEP 4.3: Computing DKKM factors (nfeatures=360)
+======================================================================
+
+
+Loading panel from /app/outputs/kp14_0_panel.pkl...
+Loaded panel: shape=(720000, 9)
+
+Panel after cleaning:
+  Start month: 300, End month: 1019
+  Total observations: 720000
+======================================================================
+DKKM (RANDOM FOURIER FEATURES) FACTORS
+======================================================================
+Model: kp14
+Panel ID: kp14_0
+Configuration: N=1000, T=720, n_jobs=24
+Features: 360
+Started at Sun 18 Jan 2026, 09:18AM
+======================================================================
+
+----------------------------------------------------------------------
+Computing DKKM factors...
+  Features: 360, Matrices: 1
+  Rank standardize: True
+  Weight matrix 1/1
+[ACCELERATION] Using Numba-accelerated DKKM functions
+[OK] DKKM factors computed in 2.5s at 09:18AM
+
+----------------------------------------------------------------------
+Computing portfolio statistics...
+  Alpha grid: [0, 0.0001, 0.001, 0.01, 0.05, 0.1, 1]
+  Include market: True
+  [OK] DKKM stats: 2520 observations
+[OK] Portfolio statistics computed in 186.5s
+
+Factor Returns Summary:
+  DKKM: 1 weight matrices
+  Features: 360
+  Rank standardize: True
+
+[OK] Results saved to: /app/outputs/kp14_0_dkkm_360.pkl
+     Dictionary keys: ['dkkm_factors', 'dkkm_stats', 'weights', 'nfeatures', 'nmat', 'rank_standardize', 'panel_id', 'model', 'chars', 'start', 'end']
+
+     Contents:
+       dkkm_factors: DataFrame (720, 360)
+       dkkm_stats: DataFrame (2520, 9)
+       weights: ndarray (180, 5)
+       nfeatures: int = 360
+       nmat: int = 1
+       rank_standardize: bool = True
+       panel_id: str = kp14_0
+       model: str = kp14
+       chars: list (length 5)
+       start: int64 = 300
+       end: int64 = 1019
+
+Total runtime: 200.3s (3.3 minutes)
+
+======================================================================
+COMPUTATION COMPLETE
+======================================================================
+Finished at Sun 18 Jan 2026, 09:21AM
+
+Usage examples:
+  import pickle
+  with open('/app/outputs/kp14_0_dkkm_360.pkl', 'rb') as f:
+      results = pickle.load(f)
+  dkkm = results['dkkm_factors']
+======================================================================
+[CLEANUP] Reduced kp14_0_dkkm_360.pkl: 1.16 MB -> 0.16 MB
+
+======================================================================
+STEP 4.4: Computing DKKM factors (nfeatures=3600)
+======================================================================
+
+
+Loading panel from /app/outputs/kp14_0_panel.pkl...
+Loaded panel: shape=(720000, 9)
+
+Panel after cleaning:
+  Start month: 300, End month: 1019
+  Total observations: 720000
+======================================================================
+DKKM (RANDOM FOURIER FEATURES) FACTORS
+======================================================================
+Model: kp14
+Panel ID: kp14_0
+Configuration: N=1000, T=720, n_jobs=24
+Features: 3600
+Started at Sun 18 Jan 2026, 09:21AM
+======================================================================
+
+----------------------------------------------------------------------
+Computing DKKM factors...
+  Features: 3600, Matrices: 1
+  Rank standardize: True
+  Weight matrix 1/1
+[ACCELERATION] Using Numba-accelerated DKKM functions
+[OK] DKKM factors computed in 13.8s at 09:22AM
+
+----------------------------------------------------------------------
+Computing portfolio statistics...
+  Alpha grid: [0, 0.0001, 0.001, 0.01, 0.05, 0.1, 1]
+  Include market: True
+  [OK] DKKM stats: 2520 observations
+[OK] Portfolio statistics computed in 901.5s
+
+Factor Returns Summary:
+  DKKM: 1 weight matrices
+  Features: 3600
+  Rank standardize: True
+
+[OK] Results saved to: /app/outputs/kp14_0_dkkm_3600.pkl
+     Dictionary keys: ['dkkm_factors', 'dkkm_stats', 'weights', 'nfeatures', 'nmat', 'rank_standardize', 'panel_id', 'model', 'chars', 'start', 'end']
+
+     Contents:
+       dkkm_factors: DataFrame (720, 3600)
+       dkkm_stats: DataFrame (2520, 9)
+       weights: ndarray (1800, 5)
+       nfeatures: int = 3600
+       nmat: int = 1
+       rank_standardize: bool = True
+       panel_id: str = kp14_0
+       model: str = kp14
+       chars: list (length 5)
+       start: int64 = 300
+       end: int64 = 1019
+
+Total runtime: 926.6s (15.4 minutes)
+
+======================================================================
+COMPUTATION COMPLETE
+======================================================================
+Finished at Sun 18 Jan 2026, 09:37AM
+
+Usage examples:
+  import pickle
+  with open('/app/outputs/kp14_0_dkkm_3600.pkl', 'rb') as f:
+      results = pickle.load(f)
+  dkkm = results['dkkm_factors']
+======================================================================
+[CLEANUP] Reduced kp14_0_dkkm_3600.pkl: 10.14 MB -> 0.16 MB
+
+======================================================================
+STEP 4.5: Computing DKKM factors (nfeatures=36000)
+======================================================================
+
+
+Loading panel from /app/outputs/kp14_0_panel.pkl...
+Loaded panel: shape=(720000, 9)
+
+Panel after cleaning:
+  Start month: 300, End month: 1019
+  Total observations: 720000
+======================================================================
+DKKM (RANDOM FOURIER FEATURES) FACTORS
+======================================================================
+Model: kp14
+Panel ID: kp14_0
+Configuration: N=1000, T=720, n_jobs=24
+Features: 36000
+Started at Sun 18 Jan 2026, 09:37AM
+======================================================================
+
+----------------------------------------------------------------------
+Computing DKKM factors...
+  Features: 36000, Matrices: 1
+  Rank standardize: True
+  Weight matrix 1/1
+[ACCELERATION] Using Numba-accelerated DKKM functions
+[OK] DKKM factors computed in 128.7s at 09:39AM
+
+----------------------------------------------------------------------
+Computing portfolio statistics...
+  Alpha grid: [0, 0.0001, 0.001, 0.01, 0.05, 0.1, 1]
+  Include market: True
+  [OK] DKKM stats: 2520 observations
+[OK] Portfolio statistics computed in 8287.3s
+
+Factor Returns Summary:
+  DKKM: 1 weight matrices
+  Features: 36000
+  Rank standardize: True
+
+[OK] Results saved to: /app/outputs/kp14_0_dkkm_36000.pkl
+     Dictionary keys: ['dkkm_factors', 'dkkm_stats', 'weights', 'nfeatures', 'nmat', 'rank_standardize', 'panel_id', 'model', 'chars', 'start', 'end']
+
+     Contents:
+       dkkm_factors: DataFrame (720, 36000)
+       dkkm_stats: DataFrame (2520, 9)
+       weights: ndarray (18000, 5)
+       nfeatures: int = 36000
+       nmat: int = 1
+       rank_standardize: bool = True
+       panel_id: str = kp14_0
+       model: str = kp14
+       chars: list (length 5)
+       start: int64 = 300
+       end: int64 = 1019
+
+Total runtime: 8427.4s (140.5 minutes)
+
+======================================================================
+COMPUTATION COMPLETE
+======================================================================
+Finished at Sun 18 Jan 2026, 11:57AM
+
+Usage examples:
+  import pickle
+  with open('/app/outputs/kp14_0_dkkm_36000.pkl', 'rb') as f:
+      results = pickle.load(f)
+  dkkm = results['dkkm_factors']
+======================================================================
+[CLEANUP] Reduced kp14_0_dkkm_36000.pkl: 99.99 MB -> 0.16 MB
+
+======================================================================
+STEP 4.6: Computing DKKM factors (nfeatures=360000)
+======================================================================
+
+
+Loading panel from /app/outputs/kp14_0_panel.pkl...
+Loaded panel: shape=(720000, 9)
+
+Panel after cleaning:
+  Start month: 300, End month: 1019
+  Total observations: 720000
+======================================================================
+DKKM (RANDOM FOURIER FEATURES) FACTORS
+======================================================================
+Model: kp14
+Panel ID: kp14_0
+Configuration: N=1000, T=720, n_jobs=24
+Features: 360000
+Started at Sun 18 Jan 2026, 11:57AM
+======================================================================
+
+----------------------------------------------------------------------
+Computing DKKM factors...
+  Features: 360000, Matrices: 1
+  Rank standardize: True
+  Weight matrix 1/1
+[ACCELERATION] Using Numba-accelerated DKKM functions
+
+[ERROR] run_dkkm.py failed with return code -9

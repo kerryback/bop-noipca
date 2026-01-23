@@ -33,12 +33,11 @@ matplotlib.use('Agg')  # Use non-interactive backend
 # Add current directory to path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from config import DATA_DIR
-
 # Output directories
 SCRIPT_DIR = Path(__file__).parent
 TABLES_DIR = SCRIPT_DIR / "tables"
 FIGURES_DIR = SCRIPT_DIR / "figures"
+KOYEB_RESULTS_DIR = SCRIPT_DIR / "s3_results"
 
 # Create output directories if they don't exist
 TABLES_DIR.mkdir(exist_ok=True)
@@ -48,49 +47,45 @@ FIGURES_DIR.mkdir(exist_ok=True)
 MODELS = ['bgn', 'kp14', 'gs21']
 
 
-def discover_panels(model: str) -> List[tuple]:
+def discover_panels(model: str) -> List[int]:
     """
-    Discover all available (timestamp, panel_idx) pairs for a given model.
+    Discover all available panel indices for a given model.
 
-    Supports two filename formats:
-    - Old format: {model}_{panel_idx}_fama.pkl
-    - New format: {model}_{timestamp}_{panel_idx}_fama.pkl
-
-    Each (timestamp, panel_idx) pair is treated as a unique panel.
+    Scans s3_results/ for files matching: {model}_{panel_idx}_fama.pkl
 
     Args:
         model: Model name ('bgn', 'kp14', 'gs21')
 
     Returns:
-        Sorted list of (timestamp, panel_idx) tuples
+        Sorted list of panel_idx integers
     """
     panels = set()
 
-    # Scan for fama files (most likely to exist)
-    pattern = os.path.join(DATA_DIR, f"{model}_*_fama.pkl")
+    # Scan results directory for fama files
+    if not KOYEB_RESULTS_DIR.exists():
+        print(f"  WARNING: {KOYEB_RESULTS_DIR} does not exist")
+        return []
+
+    # Pattern: s3_results/model_*_fama.pkl
+    pattern = str(KOYEB_RESULTS_DIR / f"{model}_*_fama.pkl")
+
     for filepath in glob.glob(pattern):
-        # Extract components from filename
-        filename = Path(filepath).stem
+        # Extract panel_idx from filename
+        filename = Path(filepath).stem  # "kp14_0_fama"
         parts = filename.split('_')
 
-        if len(parts) == 3:
-            # Old format: model_panelid_fama.pkl
-            if parts[1].isdigit():
-                timestamp = 'default'
-                panel_idx = int(parts[1])
-                panels.add((timestamp, panel_idx))
-        elif len(parts) == 5:
-            # New format: model_timestamp1_timestamp2_panelid_fama.pkl
-            # e.g., bgn_20260117_092453_0_fama.pkl
-            timestamp = f"{parts[1]}_{parts[2]}"
-            if parts[3].isdigit():
-                panel_idx = int(parts[3])
-                panels.add((timestamp, panel_idx))
+        # Format: model_panelid_fama
+        if len(parts) >= 3 and parts[-1] == 'fama':
+            try:
+                panel_idx = int(parts[-2])
+                panels.add(panel_idx)
+            except ValueError:
+                continue
 
     return sorted(list(panels))
 
 
-def load_and_process_fama(model: str, panels: List[tuple]) -> pd.DataFrame:
+def load_and_process_fama(model: str, panels: List[int]) -> pd.DataFrame:
     """
     Load Fama results and compute sharpe/hjd following the notebook recipe.
 
@@ -100,24 +95,18 @@ def load_and_process_fama(model: str, panels: List[tuple]) -> pd.DataFrame:
 
     Args:
         model: Model name
-        panels: List of (timestamp, panel_idx) tuples
+        panels: List of panel_idx integers
 
     Returns DataFrame with panel-level aggregates.
     """
     all_data = []
 
-    for panel_id, (timestamp, panel_idx) in enumerate(panels):
-        # Construct filename based on format
-        if timestamp == 'default':
-            # Old format: model_n_fama.pkl
-            filename = f"{model}_{panel_idx}_fama.pkl"
-        else:
-            # New format: model_timestamp_n_fama.pkl
-            filename = f"{model}_{timestamp}_{panel_idx}_fama.pkl"
+    for panel_id, panel_idx in enumerate(panels):
+        # Construct path: s3_results/model_panelid_fama.pkl
+        filename = f"{model}_{panel_idx}_fama.pkl"
+        fama_file = KOYEB_RESULTS_DIR / filename
 
-        fama_file = os.path.join(DATA_DIR, filename)
-
-        if not os.path.exists(fama_file):
+        if not fama_file.exists():
             continue
 
         # Load fama stats (now includes sdf_ret from run_fama.py)
@@ -143,49 +132,39 @@ def load_and_process_fama(model: str, panels: List[tuple]) -> pd.DataFrame:
         return pd.DataFrame()
 
 
-def load_and_process_dkkm(model: str, panels: List[tuple]) -> pd.DataFrame:
+def load_and_process_dkkm(model: str, panels: List[int]) -> pd.DataFrame:
     """
     Load DKKM results and compute sharpe/hjd following the notebook recipe.
 
     Args:
         model: Model name
-        panels: List of (timestamp, panel_idx) tuples
+        panels: List of panel_idx integers
 
     Returns DataFrame with panel-level aggregates.
     """
     all_data = []
 
-    for panel_id, (timestamp, panel_idx) in enumerate(panels):
-        # Construct pattern based on format
-        if timestamp == 'default':
-            # Old format: model_n_dkkm_*.pkl
-            pattern = os.path.join(DATA_DIR, f"{model}_{panel_idx}_dkkm_*.pkl")
-        else:
-            # New format: model_timestamp_n_dkkm_*.pkl
-            pattern = os.path.join(DATA_DIR, f"{model}_{timestamp}_{panel_idx}_dkkm_*.pkl")
+    for panel_id, panel_idx in enumerate(panels):
+        # Construct pattern: s3_results/model_panelid_dkkm_*.pkl
+        pattern = str(KOYEB_RESULTS_DIR / f"{model}_{panel_idx}_dkkm_*.pkl")
 
         for filepath in glob.glob(pattern):
+            # Skip weight matrix files (*_W.pkl)
+            if filepath.endswith('_W.pkl'):
+                continue
+
             # Extract nfeatures from filename
+            # Format: model_panelid_dkkm_features.pkl
             filename = Path(filepath).stem
             parts = filename.split('_')
 
-            # Parse based on format
-            if timestamp == 'default':
-                # Old format: model_n_dkkm_features.pkl (4 parts)
-                if len(parts) < 4:
-                    continue
-                try:
-                    nfeatures = int(parts[3])
-                except ValueError:
-                    continue
-            else:
-                # New format: model_timestamp1_timestamp2_n_dkkm_features.pkl (6 parts)
-                if len(parts) < 6:
-                    continue
-                try:
-                    nfeatures = int(parts[5])
-                except ValueError:
-                    continue
+            # Parse: model_n_dkkm_features (4 parts)
+            if len(parts) < 4:
+                continue
+            try:
+                nfeatures = int(parts[3])
+            except ValueError:
+                continue
 
             # Load DKKM stats (now includes sdf_ret from run_dkkm.py)
             with open(filepath, 'rb') as f:
@@ -204,7 +183,7 @@ def load_and_process_dkkm(model: str, panels: List[tuple]) -> pd.DataFrame:
             dkkm_stats['num_factors'] = nfeatures
 
             all_data.append(dkkm_stats[['panel', 'month', 'alpha', 'num_factors', 'sharpe', 'hjd_sq']])
-        print(dkkm_stats.groupby('panel').sharpe.mean())
+
     if all_data:
         return pd.concat(all_data, ignore_index=True)
     else:

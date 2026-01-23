@@ -24,8 +24,9 @@
 # Optional environment variables:
 #   S3_BUCKET: S3 bucket name (default: bop-noipca)
 #   AWS_REGION: AWS region (default: us-east-2)
-#   KOYEB_APP_NAME: Koyeb app name (default: noipca-app)
+#   KOYEB_APP_NAME: Koyeb app name (default: noipca-<model>-<start>-<end>)
 #   KOYEB_REGION: Koyeb region (default: was)
+#   MONITOR_URL: URL of koyeb-monitor service for self-termination
 #
 # Examples:
 #   ./deploy_koyeb.sh kp14 0 10
@@ -143,8 +144,9 @@ fi
 # Set defaults for optional variables
 S3_BUCKET=${S3_BUCKET:-bop-noipca}
 AWS_REGION=${AWS_REGION:-us-east-2}
-KOYEB_APP_NAME=${KOYEB_APP_NAME:-noipca-app}
+KOYEB_APP_NAME=${KOYEB_APP_NAME:-noipca-${MODEL}-${START}-${END}}
 KOYEB_REGION=${KOYEB_REGION:-was}
+MONITOR_URL=${MONITOR_URL:-https://koyeb-monitor-kerrybackapps-c07b20b0.koyeb.app}
 
 # Auto-detect git branch (default: current branch)
 if [ -z "$GIT_BRANCH" ]; then
@@ -154,7 +156,7 @@ if [ -z "$GIT_BRANCH" ]; then
     fi
 fi
 
-# Generate service name (use hyphens for Koyeb naming compliance)
+# Generate service name from job arguments
 SERVICE_NAME="${MODEL}-${START}-${END}"
 
 echo "=========================================="
@@ -198,14 +200,17 @@ koyeb services create "$SERVICE_NAME" \
   --type worker \
   --git "github.com/$GIT_REPO" \
   --git-branch "$GIT_BRANCH" \
-  --git-run-command "python main.py $MODEL $START $END --koyeb" \
+  --git-run-command "python main.py $MODEL $START $END --koyeb && curl -s -X POST \$MONITOR_URL/kill -H \"Content-Type: application/json\" -d \"{\\\"service_name\\\": \\\"\$KOYEB_SERVICE_NAME\\\", \\\"app_name\\\": \\\"\$KOYEB_APP_NAME\\\"}\"" \
   --instance-type "$INSTANCE_TYPE" \
   --regions "$KOYEB_REGION" \
+  --env MONITOR_URL="$MONITOR_URL" \
   --env S3_BUCKET="$S3_BUCKET" \
   --env AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" \
   --env AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" \
   --env AWS_REGION="$AWS_REGION" \
   --env KOYEB_API_TOKEN="$KOYEB_API_TOKEN" \
+  --env KOYEB_APP_NAME="$KOYEB_APP_NAME" \
+  --env KOYEB_SERVICE_NAME="$SERVICE_NAME" \
   --token "$KOYEB_API_TOKEN"
 
 echo ""

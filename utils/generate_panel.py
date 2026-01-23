@@ -31,8 +31,10 @@ import time
 from datetime import datetime
 import importlib
 
-# Add current directory to path for imports
+# Add current directory and parent directory to path for imports
+# Parent directory is needed for temp_config files created by main.py
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 def main():

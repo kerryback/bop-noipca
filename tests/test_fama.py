@@ -370,12 +370,15 @@ def test_fama_factors(model):
                 # Compute weights on stocks
                 weights_on_stocks = factor_weights @ port_of_factors
 
-                # Manually compute stats using original formulas
+                # CRITICAL: Subset matrices to only firms present at this month
+                # This matches the production code behavior (root code subsets matrices)
                 keep_this_month = data_month.index.to_numpy()
                 stock_cov = cond_var[keep_this_month, :][:, keep_this_month]
                 rp_month = rp[keep_this_month]
-                second_moment_month = second_moment[keep_this_month, :][:, keep_this_month]
-                second_moment_inv_month = second_moment_inv[keep_this_month, :][:, keep_this_month]
+                # Compute second_moment and its inverse from subsetted matrices
+                # Note: inv(A[subset]) != inv(A)[subset], so we must compute inverse AFTER subsetting
+                second_moment_month = stock_cov + np.outer(rp_month, rp_month)
+                second_moment_inv_month = np.linalg.pinv(second_moment_month)
 
                 manual_stdev = np.sqrt(weights_on_stocks @ stock_cov @ weights_on_stocks)
                 manual_mean = weights_on_stocks @ rp_month

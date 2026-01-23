@@ -14,6 +14,7 @@ import scipy.linalg as linalg
 from typing import Callable, List, Tuple
 from .ridge_utils import ridge_regression_fast
 from .factor_utils import standardize_columns
+from .sdf_utils import load_precomputed_moments
 
 
 def fama_french(
@@ -255,3 +256,130 @@ def mve_data(
     pi = ridge_regression_fast(X, y, alpha=360 * alpha)
 
     return pd.Series(pi, index=f.columns)
+
+
+def compute_portfolio_stats(
+    ff_returns: pd.DataFrame,
+    fm_returns: pd.DataFrame,
+    panel: pd.DataFrame,
+    panel_id: str,
+    model: str,
+    chars: list,
+    start_month: int,
+    end_month: int,
+    alpha_lst: list = None,  # IGNORED - Fama methods use OLS only (alpha=0)
+    burnin: int = None
+) -> pd.DataFrame:
+    """
+    Compute portfolio statistics for Fama factors (FF and FM).
+
+    NOTE: Penalization disabled - uses OLS only (alpha=0).
+
+    Args:
+        ff_returns: Fama-French factor returns DataFrame
+        fm_returns: Fama-MacBeth factor returns DataFrame
+        panel: Panel data
+        panel_id: Panel identifier (e.g., 'kp14_0')
+        model: Model name ('bgn', 'kp14', 'gs21')
+        chars: List of characteristics
+        start_month: First month (must be >= burnin + 360)
+        end_month: Last month
+        alpha_lst: IGNORED - kept for API compatibility
+        burnin: Burn-in period (must be from config.BGN_BURNIN/KP14_BURNIN/GS21_BURNIN)
+
+    Returns:
+        DataFrame with columns: ['month', 'method', 'alpha', 'stdev', 'mean', 'xret', 'sdf_ret', 'hjd']
+    """
+    # PENALIZATION COMMENTED OUT - USE OLS ONLY
+    # if alpha_lst is None:
+    #     alpha_lst = [0]
+
+    # Force alpha=0 (OLS) for Fama methods
+    alpha = 0
+
+    # Load pre-computed SDF moments
+    moments, N, moments_start, moments_end = load_precomputed_moments(panel_id)
+
+    # Clamp start_month to moments range (portfolio stats need pre-computed moments)
+    if start_month < moments_start:
+        print(f"  [INFO] Clamping start_month from {start_month} to {moments_start} (moments range)")
+        start_month = moments_start
+
+    if end_month > moments_end:
+        raise ValueError(
+            f"Requested end_month {end_month} exceeds available moments range "
+            f"[{moments_start}, {moments_end}] for panel {panel_id}. "
+            f"Recompute moments with a wider range."
+        )
+
+    results_list = []
+
+    # Combine FF and FM returns
+    fama_methods = {
+        'ff': ff_returns,
+        'fm': fm_returns
+    }
+
+    for method_name, factor_returns in fama_methods.items():
+        for month in range(start_month, end_month + 1):
+            # Get pre-computed SDF outputs for this month
+            if month not in moments:
+                raise KeyError(f"Month {month} not found in pre-computed moments")
+
+            month_moments = moments[month]
+            rp_full = month_moments['rp']
+            cond_var_full = month_moments['cond_var']
+            sdf_ret = month_moments['sdf_ret']
+
+            # PENALIZATION COMMENTED OUT - SINGLE ALPHA ONLY
+            # for alpha in alpha_lst:
+            # Use OLS (alpha=0) for portfolio optimization
+            port_of_factors = mve_data(factor_returns, month, alpha)
+
+            # Get factor loadings from panel
+            # Recompute Fama factors for this month to get loadings
+            data_month = panel.loc[month].copy()
+
+            if method_name == 'ff':
+                # Fama-French: Get loadings from factor construction
+                loadings = fama_french(data_month, chars, data_month['mve'])
+            else:
+                # Fama-MacBeth: Get loadings from characteristics
+                loadings = fama_macbeth(data_month, chars, stdz_fm=True)
+
+            # Portfolio weights on stocks (only for present firms)
+            weights_on_stocks = loadings @ port_of_factors.values
+
+            # Get firm IDs from data_month (firms present at this month)
+            firm_ids = data_month.index.to_numpy() if isinstance(data_month.index, pd.Index) else data_month['firmid'].to_numpy()
+
+            # CRITICAL: Subset matrices to only firms present at this month
+            # This matches root code behavior where matrices are subsetted before computation
+            rp = rp_full[firm_ids]
+            cond_var = cond_var_full[firm_ids, :][:, firm_ids]
+            second_moment = cond_var + np.outer(rp, rp)
+            second_moment_inv = linalg.pinv(second_moment)
+
+            # Compute statistics using subsetted matrices
+            stdev = np.sqrt(weights_on_stocks @ cond_var @ weights_on_stocks)
+            mean = weights_on_stocks @ rp
+
+            # Realized return
+            xret = weights_on_stocks @ data_month['xret'].values
+
+            # Hansen-Jagannathan distance (now computed correctly with subsetted matrices)
+            errs = rp - second_moment @ weights_on_stocks
+            hjd = np.sqrt(errs @ second_moment_inv @ errs)
+
+            results_list.append({
+                'month': month,
+                'method': method_name,
+                'alpha': alpha,  # Will always be 0 (OLS)
+                'stdev': stdev,
+                'mean': mean,
+                'xret': xret,
+                'sdf_ret': sdf_ret,
+                'hjd': hjd
+            })
+
+    return pd.DataFrame(results_list)

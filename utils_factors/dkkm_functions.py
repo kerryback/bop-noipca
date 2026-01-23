@@ -23,6 +23,8 @@ except ImportError:
 
 # Import ridge regression
 from .ridge_utils import ridge_regression_grid
+from .sdf_utils import load_precomputed_moments
+from .fama_functions import fama_french
 
 # If Numba failed, import standard rank_standardize
 if not NUMBA_AVAILABLE:
@@ -241,3 +243,147 @@ def mve_data(
 
     # Return as DataFrame (columns = original unscaled alpha values)
     return pd.DataFrame(betas, index=index_cols, columns=result_alphas)
+
+
+def compute_portfolio_stats(
+    dkkm_returns: pd.DataFrame,
+    panel: pd.DataFrame,
+    panel_id: str,
+    model: str,
+    W: np.ndarray,
+    chars: list,
+    start_month: int,
+    end_month: int,
+    alpha_lst: list,
+    include_mkt: bool = True,
+    mkt_returns: pd.DataFrame = None,
+    matrix_idx: int = 0,
+    burnin: int = None
+) -> pd.DataFrame:
+    """
+    Compute portfolio statistics for DKKM factors.
+
+    Evaluates across alpha grid.
+
+    Args:
+        dkkm_returns: DKKM factor returns DataFrame
+        panel: Panel data
+        panel_id: Panel identifier (e.g., 'kp14_0')
+        model: Model name ('bgn', 'kp14', 'gs21')
+        W: Random feature matrix
+        chars: List of characteristics
+        start_month: First month (must be >= burnin + 360)
+        end_month: Last month
+        alpha_lst: List of ridge penalties (REQUIRED - no default)
+        include_mkt: Whether market factor is included
+        mkt_returns: Market factor returns (if include_mkt=True)
+        matrix_idx: Random matrix index (for tracking)
+        burnin: Burn-in period (must be from config.BGN_BURNIN/KP14_BURNIN/GS21_BURNIN)
+
+    Returns:
+        DataFrame with columns: ['month', 'matrix', 'alpha', 'include_mkt', 'stdev', 'mean', 'xret', 'sdf_ret', 'hjd']
+    """
+    if alpha_lst is None:
+        raise ValueError("alpha_lst cannot be None - must provide explicit list of ridge penalties")
+
+    if include_mkt and mkt_returns is None:
+        raise ValueError(
+            "include_mkt=True but mkt_returns is None. "
+            "Either provide mkt_returns (FF market returns) or set include_mkt=False."
+        )
+
+    # Load pre-computed SDF moments
+    moments, N, moments_start, moments_end = load_precomputed_moments(panel_id)
+
+    # Clamp start_month to moments range (portfolio stats need pre-computed moments)
+    if start_month < moments_start:
+        print(f"  [INFO] Clamping start_month from {start_month} to {moments_start} (moments range)")
+        start_month = moments_start
+
+    if end_month > moments_end:
+        raise ValueError(
+            f"Requested end_month {end_month} exceeds available moments range "
+            f"[{moments_start}, {moments_end}] for panel {panel_id}. "
+            f"Recompute moments with a wider range."
+        )
+
+    results_list = []
+
+    # Get number of DKKM features (D)
+    nfeatures = dkkm_returns.shape[1]
+
+    for month in range(start_month, end_month + 1):
+        # Get pre-computed SDF outputs for this month
+        if month not in moments:
+            raise KeyError(f"Month {month} not found in pre-computed moments")
+
+        month_moments = moments[month]
+        rp_full = month_moments['rp']
+        cond_var_full = month_moments['cond_var']
+        sdf_ret = month_moments['sdf_ret']
+
+        for alpha in alpha_lst:
+            # Pass unscaled alpha - mve_data handles all scaling internally
+            mkt_rf = mkt_returns if include_mkt else None
+            port_of_factors = mve_data(
+                dkkm_returns,
+                month,
+                np.array([alpha]),  # Unscaled - mve_data applies 360*nfeatures scaling
+                mkt_rf
+            )
+
+            # Get factor loadings using RFF
+            data_month = panel.loc[month].copy()
+
+            # Get risk-free rate for BGN model
+            if model == 'bgn':
+                rf = data_month['rf_stand']
+            else:
+                rf = None
+
+            # Compute RFF features (loadings)
+            loadings, _ = rff(data_month[chars], rf, W, model)
+
+            # Add market weights when include_mkt=True AND mkt_returns is available
+            # This matches root code: factor_weights['mkt_rf'] = fama.fama_french(...)[:, -1]
+            if include_mkt and mkt_rf is not None:
+                mkt_weights = fama_french(data_month[chars], chars, data_month['mve'])[:, -1]
+                loadings['mkt_rf'] = mkt_weights
+
+            # Portfolio weights on stocks (partial - only for present firms)
+            weights_on_stocks = loadings.values @ port_of_factors.values.flatten()
+
+            # Get firm IDs from data_month (firms present at this month)
+            firm_ids = data_month.index.to_numpy() if isinstance(data_month.index, pd.Index) else data_month['firmid'].to_numpy()
+
+            # CRITICAL: Subset matrices to only firms present at this month
+            # This matches root code behavior where matrices are subsetted before computation
+            rp = rp_full[firm_ids]
+            cond_var = cond_var_full[firm_ids, :][:, firm_ids]
+            second_moment = cond_var + np.outer(rp, rp)
+            second_moment_inv = np.linalg.pinv(second_moment)
+
+            # Compute statistics using subsetted matrices
+            stdev = np.sqrt(weights_on_stocks @ cond_var @ weights_on_stocks)
+            mean = weights_on_stocks @ rp
+
+            # Realized return
+            xret = weights_on_stocks @ data_month['xret'].values
+
+            # Hansen-Jagannathan distance (now computed correctly with subsetted matrices)
+            errs = rp - second_moment @ weights_on_stocks
+            hjd = np.sqrt(errs @ second_moment_inv @ errs)
+
+            results_list.append({
+                'month': month,
+                'matrix': matrix_idx,
+                'alpha': alpha,
+                'include_mkt': include_mkt,
+                'stdev': stdev,
+                'mean': mean,
+                'xret': xret,
+                'sdf_ret': sdf_ret,
+                'hjd': hjd
+            })
+
+    return pd.DataFrame(results_list)

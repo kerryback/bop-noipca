@@ -48,7 +48,11 @@ if NUMBA_AVAILABLE:
 
             i = j
 
-        return (ranks - 0.5) / N - 0.5
+        # Map [1, N] to [-0.5, 0.5]: (ranks - 1) / (N - 1) - 0.5
+        if N > 1:
+            return (ranks - 1) / (N - 1) - 0.5
+        else:
+            return np.zeros(N, dtype=np.float64)
 
     @numba.njit(parallel=True, fastmath=True, cache=True)
     def _rank_standardize_2d_numba(arr):
@@ -79,7 +83,11 @@ if NUMBA_AVAILABLE:
 
                 i = k
 
-            result[:, j] = (ranks - 0.5) / N - 0.5
+            # Map [1, N] to [-0.5, 0.5]: (ranks - 1) / (N - 1) - 0.5
+            if N > 1:
+                result[:, j] = (ranks - 1) / (N - 1) - 0.5
+            else:
+                result[:, j] = 0.0
 
         return result
 
@@ -87,7 +95,8 @@ if NUMBA_AVAILABLE:
         """
         Rank standardize array (Numba-accelerated, 3-5x faster).
 
-        Maps values to [-0.5, 0.5] based on their rank.
+        Maps values to exactly [-0.5, 0.5] based on their rank.
+        Smallest value → -0.5, Largest value → 0.5
         Uses average ranking for ties (matches pandas .rank() behavior).
 
         Parameters

@@ -266,7 +266,9 @@ def test_dkkm_factors(model, nfeatures):
         return False
 
     factors_new = dkkm_data['dkkm_factors']
-    rank_standardize = dkkm_data.get('rank_standardize', True)  # Default to True
+    if 'rank_standardize' not in dkkm_data:
+        raise KeyError("'rank_standardize' key not found in DKKM output - file may be corrupted or outdated")
+    rank_standardize = dkkm_data['rank_standardize']
 
     # Extract W matrix used by run_dkkm.py
     if 'weights' not in dkkm_data:
@@ -307,6 +309,13 @@ def test_dkkm_factors(model, nfeatures):
         else:
             with open(moments_file, 'rb') as f:
                 moments_data = pickle.load(f)
+
+            # Load Fama data to get FF returns for market (if include_mkt)
+            fama_file = Path(DATA_DIR) / f'{panel_id}_fama.pkl'
+            fama_data = None
+            if fama_file.exists():
+                with open(fama_file, 'rb') as f:
+                    fama_data = pickle.load(f)
 
             # Test three months: first, last, and random middle
             min_month = dkkm_stats['month'].min()
@@ -358,6 +367,23 @@ def test_dkkm_factors(model, nfeatures):
                 # Use the factors computed with current code (respects rank_standardize flag)
                 dkkm_returns = factors_new
 
+                # Get FF market returns for mve_data when include_mkt
+                mkt_rf_series = None
+                if include_mkt_test:
+                    if fama_data is None:
+                        raise ValueError("include_mkt=True but fama_data is None - fama file required")
+                    if 'ff_returns' not in fama_data:
+                        raise KeyError("include_mkt=True but 'ff_returns' not in fama_data")
+                    ff_returns = fama_data['ff_returns']
+                    mkt_rf_series = ff_returns.iloc[:, -1]
+
+                # Add market weights when include_mkt=True
+                # (matches production code behavior)
+                if include_mkt_test:
+                    import fama_functions as fama_old
+                    mkt_weights = fama_old.fama_french(data_month[chars], chars, mve=data_month['mve'])[:, -1]
+                    factor_loadings['mkt_rf'] = mkt_weights
+
                 # Use original mve_data to match production code behavior
                 # Pass nfeatures * alpha to match portfolio_stats.py line 306
                 nfeatures = dkkm_returns.shape[1]
@@ -365,25 +391,29 @@ def test_dkkm_factors(model, nfeatures):
                     f=dkkm_returns,
                     month=test_month,
                     alpha_lst=nfeatures * np.array([test_alpha]),
-                    mkt_rf=None if not include_mkt_test else None  # Would need market returns if include_mkt
+                    mkt_rf=mkt_rf_series
                 )
                 port_of_factors = port_of_factors_df.values.flatten()
 
-                # Compute weights on stocks
-                weights_partial = factor_loadings @ port_of_factors
+                # Compute weights on stocks (only for present firms)
+                weights_on_stocks = factor_loadings.values @ port_of_factors
 
-                # Create full N-dimensional weight vector
-                N_moments = moments_data['N']
-                weights_on_stocks = np.zeros(N_moments)
+                # Get firm IDs from data_month (firms present at this month)
                 firm_ids = data_month.index.to_numpy()
-                weights_on_stocks[firm_ids] = weights_partial
 
-                # Manually compute stats using original formulas
-                manual_stdev = np.sqrt(weights_on_stocks @ cond_var @ weights_on_stocks)
-                manual_mean = weights_on_stocks @ rp
+                # CRITICAL: Subset matrices to only firms present at this month
+                # This matches the production code behavior (root code subsets matrices)
+                rp_subset = rp[firm_ids]
+                cond_var_subset = cond_var[firm_ids, :][:, firm_ids]
+                second_moment_subset = cond_var_subset + np.outer(rp_subset, rp_subset)
+                second_moment_inv_subset = np.linalg.pinv(second_moment_subset)
+
+                # Manually compute stats using subsetted matrices
+                manual_stdev = np.sqrt(weights_on_stocks @ cond_var_subset @ weights_on_stocks)
+                manual_mean = weights_on_stocks @ rp_subset
                 manual_xret = weights_on_stocks @ data_month['xret'].values
-                errs = rp - second_moment @ weights_on_stocks
-                manual_hjd = np.sqrt(errs @ second_moment_inv @ errs)
+                errs = rp_subset - second_moment_subset @ weights_on_stocks
+                manual_hjd = np.sqrt(errs @ second_moment_inv_subset @ errs)
 
                 # Compare with pickle values
                 print(f"        Comparing computed vs. pickle values:")

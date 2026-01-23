@@ -22,8 +22,10 @@ Examples:
 import sys
 import os
 
-# Add current directory to path for imports
+# Add current directory and parent directory to path for imports
+# Parent directory is needed for temp_config files created by main.py
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import numpy as np
 import pandas as pd
@@ -192,7 +194,7 @@ def main():
         print(f"  [OK] Model stats: {len(model_stats)} observations")
 
     # Fama factors statistics
-    fama_stats = portfolio_stats.compute_fama_portfolio_stats(
+    fama_stats = fama.compute_portfolio_stats(
         ff_rets, fm_rets, panel,
         panel_id=panel_id,
         model=model_name,
