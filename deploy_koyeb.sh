@@ -24,7 +24,7 @@
 # Optional environment variables:
 #   S3_BUCKET: S3 bucket name (default: bop-noipca)
 #   AWS_REGION: AWS region (default: us-east-2)
-#   KOYEB_APP_NAME: Koyeb app name (default: noipca-<model>-<start>-<end>)
+#   KOYEB_APP_NAME: Koyeb app name (default: noipca-app)
 #   KOYEB_REGION: Koyeb region (default: was)
 #   MONITOR_URL: URL of koyeb-monitor service for self-termination
 #
@@ -144,7 +144,7 @@ fi
 # Set defaults for optional variables
 S3_BUCKET=${S3_BUCKET:-bop-noipca}
 AWS_REGION=${AWS_REGION:-us-east-2}
-KOYEB_APP_NAME=${KOYEB_APP_NAME:-noipca-${MODEL}-${START}-${END}}
+KOYEB_APP_NAME=${KOYEB_APP_NAME:-noipca-app}
 KOYEB_REGION=${KOYEB_REGION:-was}
 MONITOR_URL=${MONITOR_URL:-https://koyeb-monitor-kerrybackapps-c07b20b0.koyeb.app}
 
